@@ -33,7 +33,7 @@ public final class R {
         public static final int bottom_layout=0x7f090001;
         public static final int color_picker=0x7f090002;
         public static final int eraser_picker=0x7f090004;
-        public static final int shape_picker=0x7f090005;
+        public static final int redo=0x7f090005;
         public static final int size_picker=0x7f090003;
         public static final int sketchpad=0x7f090000;
     }

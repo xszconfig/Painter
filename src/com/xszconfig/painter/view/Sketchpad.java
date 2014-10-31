@@ -93,6 +93,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
+		    //clear the removed action list everytime draw something new 
+		    removedActions.clear();
 			setCurAction(touchX, touchY);
 			break;
 		case MotionEvent.ACTION_MOVE:

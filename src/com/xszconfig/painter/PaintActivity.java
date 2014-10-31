@@ -36,7 +36,7 @@ public class PaintActivity extends Activity implements OnClickListener {
         findViewById(R.id.color_picker).setOnClickListener(this);
         findViewById(R.id.size_picker).setOnClickListener(this);
         findViewById(R.id.eraser_picker).setOnClickListener(this);
-        findViewById(R.id.shape_picker).setOnClickListener(this);
+        findViewById(R.id.redo).setOnClickListener(this);
     }
 
     @Override
@@ -56,7 +56,8 @@ public class PaintActivity extends Activity implements OnClickListener {
             case R.id.eraser_picker:
                 mSketchpad.setColor(Color.WHITE);
                 break;
-            case R.id.shape_picker:
+            case R.id.redo:
+                mSketchpad.redo();
                 break;
 
             default:
