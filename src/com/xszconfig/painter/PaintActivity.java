@@ -16,13 +16,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
-import com.xszconfig.painter.view.Doodle;
-import com.xszconfig.painter.view.Doodle.ActionType;
+import com.xszconfig.painter.view.Sketchpad;
+import com.xszconfig.painter.view.Sketchpad.ActionType;
 
 
 public class PaintActivity extends Activity implements OnClickListener {
 
-	private Doodle mDoodle;
+	private Sketchpad mSketchpad;
 
 	private AlertDialog mColorDialog;
 	private AlertDialog mPaintDialog;
@@ -31,10 +31,10 @@ public class PaintActivity extends Activity implements OnClickListener {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_doodle);
+		setContentView(R.layout.activity_sketchpad);
 
-		mDoodle = (Doodle) findViewById(R.id.doodle_surfaceview);
-		mDoodle.setSize(dip2px(5));
+		mSketchpad = (Sketchpad) findViewById(R.id.sketchpad);
+		mSketchpad.setSize(dip2px(5));
 
 		findViewById(R.id.color_picker).setOnClickListener(this);
 		findViewById(R.id.paint_picker).setOnClickListener(this);
@@ -44,7 +44,7 @@ public class PaintActivity extends Activity implements OnClickListener {
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		return mDoodle.onTouchEvent(event);
+		return mSketchpad.onTouchEvent(event);
 	}
 
 	@Override
@@ -57,9 +57,9 @@ public class PaintActivity extends Activity implements OnClickListener {
 			showSizeDialog();
 			break;
 		case R.id.eraser_picker:
-			mDoodle.setType(ActionType.Path);
-			mDoodle.setSize(dip2px(10));
-			mDoodle.setColor("#ffffff");
+			mSketchpad.setType(ActionType.Path);
+			mSketchpad.setSize(dip2px(10));
+			mSketchpad.setColor("#ffffff");
 			break;
 		case R.id.shape_picker:
 			showShapeDialog();
@@ -82,22 +82,22 @@ public class PaintActivity extends Activity implements OnClickListener {
 										int which) {
 									switch (which + 1) {
 									case 1:
-										mDoodle.setType(ActionType.Path);
+										mSketchpad.setType(ActionType.Path);
 										break;
 									case 2:
-										mDoodle.setType(ActionType.Line);
+										mSketchpad.setType(ActionType.Line);
 										break;
 									case 3:
-										mDoodle.setType(ActionType.Rect);
+										mSketchpad.setType(ActionType.Rect);
 										break;
 									case 4:
-										mDoodle.setType(ActionType.Circle);
+										mSketchpad.setType(ActionType.Circle);
 										break;
 									case 5:
-										mDoodle.setType(ActionType.FillecRect);
+										mSketchpad.setType(ActionType.FillecRect);
 										break;
 									case 6:
-										mDoodle.setType(ActionType.FilledCircle);
+										mSketchpad.setType(ActionType.FilledCircle);
 										break;
 									default:
 										break;
@@ -119,13 +119,13 @@ public class PaintActivity extends Activity implements OnClickListener {
 										int which) {
 									switch (which) {
 									case 0:
-										mDoodle.setSize(dip2px(5));
+										mSketchpad.setSize(dip2px(5));
 										break;
 									case 1:
-										mDoodle.setSize(dip2px(10));
+										mSketchpad.setSize(dip2px(10));
 										break;
 									case 2:
-										mDoodle.setSize(dip2px(15));
+										mSketchpad.setSize(dip2px(15));
 										break;
 									default:
 										break;
@@ -148,13 +148,13 @@ public class PaintActivity extends Activity implements OnClickListener {
 										int which) {
 									switch (which) {
 									case 0:
-										mDoodle.setColor("#ff0000");
+										mSketchpad.setColor("#ff0000");
 										break;
 									case 1:
-										mDoodle.setColor("#00ff00");
+										mSketchpad.setColor("#00ff00");
 										break;
 									case 2:
-										mDoodle.setColor("#0000ff");
+										mSketchpad.setColor("#0000ff");
 										break;
 
 									default:
@@ -186,7 +186,7 @@ public class PaintActivity extends Activity implements OnClickListener {
 			if (!new File(path).exists()) {
 				new File(path).getParentFile().mkdir();
 			}
-			savePicByPNG(mDoodle.getBitmap(), path);
+			savePicByPNG(mSketchpad.getBitmap(), path);
 			Toast.makeText(this, "图片保存成功，路径为" + path, Toast.LENGTH_LONG).show();
 		}
 		return true;
@@ -194,7 +194,7 @@ public class PaintActivity extends Activity implements OnClickListener {
 	
 	@Override
 	public void onBackPressed() {
-		if (!mDoodle.back()) {
+		if (!mSketchpad.back()) {
 			super.onBackPressed();
 		}
 	}
@@ -202,9 +202,9 @@ public class PaintActivity extends Activity implements OnClickListener {
 	public static void savePicByPNG(Bitmap b, String filePath) {
 		FileOutputStream fos = null;
 		try {
-//			if (!new File(filePath).exists()) {
-//				new File(filePath).createNewFile();
-//			}
+			if (!new File(filePath).exists()) {
+				new File(filePath).createNewFile();
+			}
 			fos = new FileOutputStream(filePath);
 			if (null != fos) {
 				b.compress(Bitmap.CompressFormat.PNG, 90, fos);

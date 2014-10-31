@@ -5,8 +5,8 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <com.xszconfig.painter.view.Doodle
-        android:id="@+id/doodle_surfaceview"
+    <com.xszconfig.painter.view.Sketchpad
+        android:id="@+id/sketchpad"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />

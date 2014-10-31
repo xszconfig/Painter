@@ -13,10 +13,10 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 /*
- * The Canvas to draw paintings on. This is a {@link android.view.SurfaceView}.
+ * The Sketchpad to draw paintings on. This is a {@link android.view.SurfaceView}.
  */
 
-public class Doodle extends SurfaceView implements SurfaceHolder.Callback {
+public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 	private SurfaceHolder mSurfaceHolder = null;
 
@@ -35,17 +35,17 @@ public class Doodle extends SurfaceView implements SurfaceHolder.Callback {
 	
 	private ActionType type = ActionType.Path;
 	
-	public Doodle(Context context) {
+	public Sketchpad(Context context) {
 		super(context);
 		init();
 	}
 
-	public Doodle(Context context, AttributeSet attrs, int defStyle) {
+	public Sketchpad(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 		init();
 	}
 
-	public Doodle(Context context, AttributeSet attrs) {
+	public Sketchpad(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		init();
 	}
@@ -121,22 +121,22 @@ public class Doodle extends SurfaceView implements SurfaceHolder.Callback {
 			curAction = new MyPoint(x, y, currentColor);
 			break;
 		case Path:
-			curAction = new MyPath(x, y, currentSize, currentColor);
+			curAction = new Curve(x, y, currentSize, currentColor);
 			break;
 		case Line:
-			curAction = new MyLine(x, y, currentSize, currentColor);
+//			curAction = new MyLine(x, y, currentSize, currentColor);
 			break;
 		case Rect:
-			curAction = new MyRect(x, y, currentSize, currentColor);
+//			curAction = new MyRect(x, y, currentSize, currentColor);
 			break;
 		case Circle:
-			curAction = new MyCircle(x, y, currentSize, currentColor);
+//			curAction = new MyCircle(x, y, currentSize, currentColor);
 			break;
 		case FillecRect:
-			curAction = new MyFillRect(x, y, currentSize, currentColor);
+//			curAction = new MyFillRect(x, y, currentSize, currentColor);
 			break;
 		case FilledCircle:
-			curAction = new MyFillCircle(x, y, currentSize, currentColor);
+//			curAction = new MyFillCircle(x, y, currentSize, currentColor);
 			break;
 		}
 	}
