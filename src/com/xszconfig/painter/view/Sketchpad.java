@@ -205,4 +205,17 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		return false;
 	}
 	
+	public boolean restore(){
+		if (shownActions != null && shownActions.size() > 0) {
+		    //TODO null pointer here
+			Canvas canvas = mSurfaceHolder.lockCanvas();
+			canvas.drawColor(Color.WHITE);
+			for (Action a : shownActions) {
+				a.draw(canvas);
+			}
+			mSurfaceHolder.unlockCanvasAndPost(canvas);
+			return true;
+		}
+		return false;
+	}
 }

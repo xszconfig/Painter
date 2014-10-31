@@ -38,6 +38,14 @@ public class PaintActivity extends Activity implements OnClickListener {
         findViewById(R.id.eraser_picker).setOnClickListener(this);
         findViewById(R.id.redo).setOnClickListener(this);
     }
+    
+    @Override
+    protected void onResume(){
+        super.onResume();
+        if(mSketchpad != null)
+            mSketchpad.restore();
+        
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
