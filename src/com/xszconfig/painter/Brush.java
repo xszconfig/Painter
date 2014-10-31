@@ -6,7 +6,7 @@ public class Brush {
     int size;
     
     public Brush() {
-        this.mBrushType = BrushType.PENCIL;
+        this.mBrushType = BrushType.Pencil;
         this.size = DEFAULT_SIZE;
     }
     
@@ -31,15 +31,13 @@ public class Brush {
         this.size = size;
     }
     
+    public enum BrushType{
+        Pencil,//铅笔
+        Pen,//钢笔
+        WaterColorBrush,//水彩笔
+        Chalk,//粉笔
+        WaxCrayon,//蜡笔
+        Marker,//马克笔
+    }
 
-}
-
-
-enum BrushType{
-   PENCIL,//铅笔
-   PEN,//钢笔
-   WATER_COLOR_BRUSH,//水彩笔
-   CHALK,//粉笔
-   WAX_CRAYON,//蜡笔
-   MARKER,//马克笔
 }

@@ -2,6 +2,7 @@ package com.xszconfig.painter.view;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.xszconfig.painter.Brush;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -18,22 +19,19 @@ import android.view.SurfaceView;
 
 public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
-	private SurfaceHolder mSurfaceHolder = null;
-
-	//当前所选画笔的形状
-	private Action curAction = null;
-	//默认画笔为黑色
-	private int currentColor = Color.BLACK;
-	//画笔的粗细
-	private int currentSize = 5;
+	private SurfaceHolder mSurfaceHolder;
+	
+	private Action curAction;
+	private Brush curBrush;
+	private int curColor ;
 
 	private Paint mPaint;
-	//记录画笔的列表
-	private List<Action> mActions;
+	//actions shown on the sketchpad
+	private List<Action> shownActions;
+	// actions removed from the sketchpad
+	private List<Action> removedActions;
 
 	private Bitmap bmp;
-	
-	private ActionType type = ActionType.Path;
 	
 	public Sketchpad(Context context) {
 		super(context);
@@ -57,7 +55,10 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 		mPaint = new Paint();
 		mPaint.setColor(Color.WHITE);
-		mPaint.setStrokeWidth(currentSize);
+		mPaint.setStrokeWidth(Brush.DEFAULT_SIZE);
+		
+		curBrush = new Brush();
+		curColor = Action.DEFAULT_COLOR;
 	}
 
 	@Override
@@ -65,7 +66,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		Canvas canvas = mSurfaceHolder.lockCanvas();
 		canvas.drawColor(Color.WHITE);
 		mSurfaceHolder.unlockCanvasAndPost(canvas);
-		mActions = new ArrayList<Action>();
+		shownActions = new ArrayList<Action>();
+		removedActions = new ArrayList<Action>();
 	}
 
 	@Override
@@ -96,7 +98,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		case MotionEvent.ACTION_MOVE:
 			Canvas canvas = mSurfaceHolder.lockCanvas();
 			canvas.drawColor(Color.WHITE);
-			for (Action a : mActions) {
+			for (Action a : shownActions) {
 				a.draw(canvas);
 			}
 			curAction.move(touchX, touchY);
@@ -104,7 +106,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 			mSurfaceHolder.unlockCanvasAndPost(canvas);
 			break;
 		case MotionEvent.ACTION_UP:
-			mActions.add(curAction);
+		    //add curAction to the end of the list
+			shownActions.add(curAction);
 			curAction = null;
 			break;
 
@@ -114,55 +117,35 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		return super.onTouchEvent(event);
 	}
 
-	// 得到当前画笔的类型，并进行实例
+	public Brush getBrush() {
+        return curBrush;
+    }
+
+    public void setBrush(Brush curBrush) {
+        this.curBrush = curBrush;
+    }
+
+    public int getColor() {
+        return curColor;
+    }
+
+    public void setColor(int curColor) {
+        this.curColor = curColor;
+    }
+
+    // every touch event creates a new action
 	public void setCurAction(float x, float y) {
-		switch (type) {
-		case Point:
-			curAction = new MyPoint(x, y, currentColor);
-			break;
-		case Path:
-			curAction = new Curve(x, y, currentSize, currentColor);
-			break;
-		case Line:
-//			curAction = new MyLine(x, y, currentSize, currentColor);
-			break;
-		case Rect:
-//			curAction = new MyRect(x, y, currentSize, currentColor);
-			break;
-		case Circle:
-//			curAction = new MyCircle(x, y, currentSize, currentColor);
-			break;
-		case FillecRect:
-//			curAction = new MyFillRect(x, y, currentSize, currentColor);
-			break;
-		case FilledCircle:
-//			curAction = new MyFillCircle(x, y, currentSize, currentColor);
-			break;
-		}
-	}
-
-	/**
-	 * 设置画笔的颜色
-	 * @param color
-	 */
-	public void setColor(String color) {
-		currentColor = Color.parseColor(color);
-	}
-
-	/**
-	 * 设置画笔的粗细
-	 * @param size
-	 */
-	public void setSize(int size) {
-		currentSize = size;
-	}
-	
-	/**
-	 * 设置当前画笔的形状
-	 * @param type
-	 */
-	public void setType(ActionType type) {
-		this.type = type;
+	    Brush newBrush = new Brush();
+	    if( curBrush != null ){ 
+           newBrush.setSize(curBrush.getSize());
+	    }
+         
+	    int newColor = Action.DEFAULT_COLOR;
+        if( curColor != Action.DEFAULT_COLOR){
+            newColor = curColor;
+        }
+        
+	    curAction = new Action(newBrush, newColor, x, y);
 	}
 
 	/**
@@ -178,22 +161,40 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 	public void doDraw(Canvas canvas) {
 		canvas.drawColor(Color.TRANSPARENT);
-		for (Action a : mActions) {
+		for (Action a : shownActions) {
 			a.draw(canvas);
 		}
 		canvas.drawBitmap(bmp, 0, 0, mPaint);
 	}
 	
 	/**
-	 * 回退
+	 * undo
 	 * @return
 	 */
-	public boolean back() {
-		if (mActions != null && mActions.size() > 0) {
-			mActions.remove(mActions.size() - 1);
+	public boolean undo() {
+		if (shownActions != null && shownActions.size() > 0) {
+			removedActions.add(shownActions.remove(shownActions.size() - 1));
 			Canvas canvas = mSurfaceHolder.lockCanvas();
 			canvas.drawColor(Color.WHITE);
-			for (Action a : mActions) {
+			for (Action a : shownActions) {
+				a.draw(canvas);
+			}
+			mSurfaceHolder.unlockCanvasAndPost(canvas);
+			return true;
+		}
+		return false;
+	}
+		
+	/**
+	 * redo
+	 * @return
+	 */
+	public boolean redo() {
+		if (removedActions!= null && removedActions.size() > 0) {
+			shownActions.add(removedActions.remove(removedActions.size() - 1));
+			Canvas canvas = mSurfaceHolder.lockCanvas();
+			canvas.drawColor(Color.WHITE);
+			for (Action a : shownActions) {
 				a.draw(canvas);
 			}
 			mSurfaceHolder.unlockCanvasAndPost(canvas);
@@ -202,8 +203,4 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		return false;
 	}
 	
-	public enum ActionType {
-		Point, Path, Line, Rect, Circle, FillecRect, FilledCircle, Eraser
-	}
-
 }

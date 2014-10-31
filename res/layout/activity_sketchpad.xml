@@ -30,7 +30,7 @@
             android:text="颜色" />
 
         <Button
-            android:id="@+id/paint_picker"
+            android:id="@+id/size_picker"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
