@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -16,20 +17,26 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Toast;
 import com.xszconfig.painter.view.Sketchpad;
+import com.xszconfig.utils.DateUtil;
+import com.xszconfig.utils.ToastUtil;
 
 public class PaintActivity extends Activity implements OnClickListener {
 
+    private Context mContext;
     private Sketchpad   mSketchpad;
 
     private AlertDialog mColorDialog;
     private AlertDialog mPaintDialog;
+    
+    ToastUtil mToastUtil;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sketchpad);
+        mContext = PaintActivity.this;
+        mToastUtil = new ToastUtil(mContext);
 
         mSketchpad = (Sketchpad) findViewById(R.id.sketchpad);
 
@@ -136,20 +143,32 @@ public class PaintActivity extends Activity implements OnClickListener {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, 1, 1, "保存");
+        menu.add(0, 1, 1, "save to SD card");
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if( item.getItemId() == 1 ) {
-            String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/doodle/"
-                    + System.currentTimeMillis() + ".png";
-            if( !new File(path).exists() ) {
-                new File(path).getParentFile().mkdir();
+
+            if (!Environment.getExternalStorageState().equals(
+                    Environment.MEDIA_MOUNTED)) {
+                mToastUtil.LongToast("External SD card not mounted");
+                return true;
             }
-            savePicByPNG(mSketchpad.getBitmap(), path);
-            Toast.makeText(this, "图片保存成功，路径为" + path, Toast.LENGTH_LONG).show();
+            
+            String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_PATH;
+            String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis())+ ".png";
+            File file = new File(directory, filename);
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            String filePath = file.getPath();
+            boolean isSaved = savePicAsPNG(mSketchpad.getBitmap(), filePath);
+            if( isSaved )
+                mToastUtil.LongToast("image saved: " + filePath);
+            else
+                mToastUtil.LongToast("fail to save image, checkout SD card");
         }
         return true;
     }
@@ -161,22 +180,23 @@ public class PaintActivity extends Activity implements OnClickListener {
         }
     }
 
-    public static void savePicByPNG(Bitmap b, String filePath) {
+    public static boolean savePicAsPNG(Bitmap b, String filePath) {
+        final int COMPRESS_QUALITY = 100;
         FileOutputStream fos = null;
+        boolean isSuccessful = false;
         try {
-            if( !new File(filePath).exists() ) {
-                new File(filePath).createNewFile();
-            }
             fos = new FileOutputStream(filePath);
             if( null != fos ) {
-                b.compress(Bitmap.CompressFormat.PNG, 90, fos);
+                isSuccessful = b.compress(Bitmap.CompressFormat.PNG, COMPRESS_QUALITY, fos);
                 fos.flush();
                 fos.close();
+                return isSuccessful;
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return isSuccessful;
     }
 }

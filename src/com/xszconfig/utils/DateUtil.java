@@ -12,19 +12,41 @@ import android.annotation.SuppressLint;
  */
 @SuppressLint("SimpleDateFormat")
 public class DateUtil {
-    private static String DATE_FORMAT = "yyyy-MM-dd HH:mm";
-    static SimpleDateFormat formater = new SimpleDateFormat(DATE_FORMAT);
+    private static String DAFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm";
+    private static SimpleDateFormat formater  = new SimpleDateFormat(DAFAULT_DATE_FORMAT);
     private final static long MAX_INTERVAL = 24 * 60 * 60 * 1000 ;
     
+    public static String format(long milliseconds){
+        return formater.format(new Date(milliseconds));
+    }
+
     public static String format(Date date){
+        return formater.format(date);
+    }
+
+    public static String format(String pattern, Date date){
+        DateUtil.formater = new SimpleDateFormat(pattern);
+        return DateUtil.format(date);
+    }
+    
+    public static String format(String pattern, long milliseconds){
+        DateUtil.formater = new SimpleDateFormat(pattern);
+        return DateUtil.format(milliseconds);
+    }
+    
+    public static String formatWithInterval(long milliseconds){
+        return formatWithInterval(new Date(milliseconds));
+    }
+    
+    public static String formatWithInterval(Date date){
         long interval = System.currentTimeMillis() - date.getTime() ;
         if( interval < MAX_INTERVAL ) 
-            return millisecondToMinute(interval);
+            return calculateInterval(interval);
 
         return formater.format(date);
     }
     
-    private static String millisecondToMinute(long milliseconds){
+    private static String calculateInterval(long milliseconds){
         final long HOUR_FACTOR = 60 * 60 * 1000;
         final long MINUTE_FACTOR = 60 * 1000;
         
@@ -37,7 +59,7 @@ public class DateUtil {
             else if (minutes >= 1)
                 return minutes + "m" ;
             else
-                return "1m" ;
+                return "1m" ;//the minimum interval is set to 1 minute.
         }
         
         //Locale.getDefault().getDisplayLanguage().equals("中文")
