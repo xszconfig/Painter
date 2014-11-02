@@ -19,13 +19,15 @@ import com.xszconfig.painter.Brush;
 
 public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
+    private static int COLOR_BACKGROUND_DEFAULT = Color.WHITE;
+
 	private SurfaceHolder mSurfaceHolder;
 	
 	private Action curAction;
 	private Brush curBrush;
 	private int curColor ;
 
-	private Paint mPaint;
+//	private Paint mPaint;
 	//actions shown on the sketchpad
 	private List<Action> shownActions;
 	// actions removed from the sketchpad
@@ -53,9 +55,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		mSurfaceHolder.addCallback(this);
 		this.setFocusable(true);
 
-		mPaint = new Paint();
-		mPaint.setColor(Color.WHITE);
-		mPaint.setStrokeWidth(Brush.DEFAULT_SIZE);
+//		mPaint = new Paint();
+//		mPaint.setColor(Color.WHITE);
+//		mPaint.setStrokeWidth(Brush.DEFAULT_SIZE);
 		
 		curBrush = new Brush();
 		curColor = Action.DEFAULT_COLOR;
@@ -64,7 +66,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		Canvas canvas = mSurfaceHolder.lockCanvas();
-		canvas.drawColor(Color.WHITE);
+		canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
 		mSurfaceHolder.unlockCanvasAndPost(canvas);
 		
 		//shownActions will be auto-restored if not null
@@ -88,7 +90,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     private void drawShownActions() {
         Canvas canvas = mSurfaceHolder.lockCanvas();
-        canvas.drawColor(Color.WHITE);
+        canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
         for (Action a : shownActions) {
         	a.draw(canvas);
         }
@@ -118,7 +120,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 			break;
 		case MotionEvent.ACTION_MOVE:
 			Canvas canvas = mSurfaceHolder.lockCanvas();
-			canvas.drawColor(Color.WHITE);
+			canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
 			for (Action a : shownActions) {
 				a.draw(canvas);
 			}
@@ -181,11 +183,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	public void doDraw(Canvas canvas) {
-		canvas.drawColor(Color.TRANSPARENT);
+		canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
 		for (Action a : shownActions) {
 			a.draw(canvas);
 		}
-		canvas.drawBitmap(bmp, 0, 0, mPaint);
+		canvas.drawBitmap(bmp, 0, 0, null);
 	}
 	
 	/**
