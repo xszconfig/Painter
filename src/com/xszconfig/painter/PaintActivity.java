@@ -42,9 +42,6 @@ public class PaintActivity extends Activity implements OnClickListener {
     @Override
     protected void onResume(){
         super.onResume();
-        if(mSketchpad != null)
-            mSketchpad.restore();
-        
     }
 
     @Override

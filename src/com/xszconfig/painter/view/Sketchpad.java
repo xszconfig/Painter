@@ -2,7 +2,6 @@ package com.xszconfig.painter.view;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.xszconfig.painter.Brush;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -12,6 +11,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import com.xszconfig.painter.Brush;
 
 /*
  * The Sketchpad to draw paintings on. This is a {@link android.view.SurfaceView}.
@@ -66,15 +66,34 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		Canvas canvas = mSurfaceHolder.lockCanvas();
 		canvas.drawColor(Color.WHITE);
 		mSurfaceHolder.unlockCanvasAndPost(canvas);
-		shownActions = new ArrayList<Action>();
-		removedActions = new ArrayList<Action>();
+		
+		//shownActions will be auto-restored if not null
+		if (shownActions == null)
+		    shownActions = new ArrayList<Action>();
+		if ( removedActions == null)
+		    removedActions = new ArrayList<Action>();
 	}
 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
 			int height) {
-
+		if ( isRestorable()) {
+			drawShownActions();
+		}
 	}
+
+    private boolean isRestorable() {
+        return shownActions != null && shownActions.size() > 0;
+    }
+
+    private void drawShownActions() {
+        Canvas canvas = mSurfaceHolder.lockCanvas();
+        canvas.drawColor(Color.WHITE);
+        for (Action a : shownActions) {
+        	a.draw(canvas);
+        }
+        mSurfaceHolder.unlockCanvasAndPost(canvas);
+    }
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
@@ -151,8 +170,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	/**
-	 * 获取画布的截图
-	 * @return
+	 * get screenshot of the sketchpad
+	 * @return bitmap contains the screenshot
 	 */
 	public Bitmap getBitmap() {
 		bmp = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
@@ -170,50 +189,26 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	}
 	
 	/**
-	 * undo
-	 * @return
+	 * undo last action
+	 * @return true if undone
 	 */
 	public boolean undo() {
-		if (shownActions != null && shownActions.size() > 0) {
+		if (isRestorable()) {
 			removedActions.add(shownActions.remove(shownActions.size() - 1));
-			Canvas canvas = mSurfaceHolder.lockCanvas();
-			canvas.drawColor(Color.WHITE);
-			for (Action a : shownActions) {
-				a.draw(canvas);
-			}
-			mSurfaceHolder.unlockCanvasAndPost(canvas);
+			drawShownActions();
 			return true;
 		}
 		return false;
 	}
 		
 	/**
-	 * redo
-	 * @return
+	 * cancel last undo() operation
+	 * @return true if recoverd from last undo()
 	 */
 	public boolean redo() {
 		if (removedActions!= null && removedActions.size() > 0) {
 			shownActions.add(removedActions.remove(removedActions.size() - 1));
-			Canvas canvas = mSurfaceHolder.lockCanvas();
-			canvas.drawColor(Color.WHITE);
-			for (Action a : shownActions) {
-				a.draw(canvas);
-			}
-			mSurfaceHolder.unlockCanvasAndPost(canvas);
-			return true;
-		}
-		return false;
-	}
-	
-	public boolean restore(){
-		if (shownActions != null && shownActions.size() > 0) {
-		    //TODO null pointer here
-			Canvas canvas = mSurfaceHolder.lockCanvas();
-			canvas.drawColor(Color.WHITE);
-			for (Action a : shownActions) {
-				a.draw(canvas);
-			}
-			mSurfaceHolder.unlockCanvasAndPost(canvas);
+			drawShownActions();
 			return true;
 		}
 		return false;

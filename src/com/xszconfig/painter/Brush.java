@@ -40,4 +40,30 @@ public class Brush {
         Marker,//马克笔
     }
 
+//    public static final int BRUSH_CHALK = 7;
+//    public static final int BRUSH_CHARCOAL = 5;
+//    public static final int BRUSH_COUNT = 9;
+//    public static final int BRUSH_ERASER = 0;
+//    public static final int BRUSH_LAST = 8;
+//    public static final int BRUSH_MARKER = 3;
+//    public static final int BRUSH_PEN = 1;
+//    public static final int BRUSH_PENCIL = 2;
+//    public static final int BRUSH_SOFT_CHARCOAL = 6;
+//    public static final int BRUSH_SOFT_ERASRE = 8;
+//    public static final int BRUSH_WATERCOLOR = 4;
+//    public static final int EFFECT_TYPE_FADE = 2;
+//    public static final int EFFECT_TYPE_LIGHT_FADE = 4;
+//    public static final int EFFECT_TYPE_LIGHT_PRESSURE_FADE = 5;
+//    public static final int EFFECT_TYPE_NORMAL = 0;
+//    public static final int EFFECT_TYPE_PRESSURE = 1;
+//    public static final int EFFECT_TYPE_PRESSURE_FADE = 3;
+//    public static final int TARGET_COUNT = 3;
+//    public static final int TARGET_PAINT = 0;
+//    public static final int TARGET_PLAYBACK = 1;
+//    public static final int TARGET_PREVIEW = 2;
+//    public static final int TEXTURE_MAX_ALPHA = 1;
+//    public static final int TEXTURE_MIN_ALPHA = 0;
+//    protected static final float WIDTH_PRESSURE_FACTOR = 0.3F;
+//    protected static final float WIDTH_SCALE_FACTOR = 0.4F;
+
 }
