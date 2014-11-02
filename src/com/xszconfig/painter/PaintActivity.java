@@ -160,13 +160,9 @@ public class PaintActivity extends Activity implements OnClickListener {
             String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_PATH;
             String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis())+ ".png";
             File file = new File(directory, filename);
-            if (!file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            String filePath = file.getPath();
-            boolean isSaved = savePicAsPNG(mSketchpad.getBitmap(), filePath);
+            boolean isSaved = savePicAsPNG(mSketchpad.getBitmap(), file);
             if( isSaved )
-                mToastUtil.LongToast("image saved: " + filePath);
+                mToastUtil.LongToast("image saved: " + file.getPath());
             else
                 mToastUtil.LongToast("fail to save image, checkout SD card");
         }
@@ -180,11 +176,15 @@ public class PaintActivity extends Activity implements OnClickListener {
         }
     }
 
-    public static boolean savePicAsPNG(Bitmap b, String filePath) {
+    public static boolean savePicAsPNG(Bitmap b, File file){
         final int COMPRESS_QUALITY = 100;
         FileOutputStream fos = null;
         boolean isSuccessful = false;
         try {
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            String filePath = file.getPath();
             fos = new FileOutputStream(filePath);
             if( null != fos ) {
                 isSuccessful = b.compress(Bitmap.CompressFormat.PNG, COMPRESS_QUALITY, fos);

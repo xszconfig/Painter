@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -12,6 +13,7 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import com.xszconfig.painter.Brush;
+import com.xszconfig.painter.R;
 
 /*
  * The Sketchpad to draw paintings on. This is a {@link android.view.SurfaceView}.
@@ -63,12 +65,19 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		curColor = Action.DEFAULT_COLOR;
 	}
 
+//	@Override
+//    protected void onDraw(Canvas canvas) {
+//        super.onDraw(canvas);
+//        Bitmap icon = BitmapFactory.decodeResource(getResources(),R.drawable.sample_painting_02);
+//        canvas.drawColor(Color.BLACK);
+//        canvas.drawBitmap(icon, 10, 10, new Paint());        
+//    }
+	
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		Canvas canvas = mSurfaceHolder.lockCanvas();
 		canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
 		mSurfaceHolder.unlockCanvasAndPost(canvas);
-		
 		//shownActions will be auto-restored if not null
 		if (shownActions == null)
 		    shownActions = new ArrayList<Action>();
