@@ -21,6 +21,14 @@ import android.view.View.OnTouchListener;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import com.larswerkman.holocolorpicker.ColorPicker;
+import com.larswerkman.holocolorpicker.ColorPicker.OnColorChangedListener;
+import com.larswerkman.holocolorpicker.OpacityBar;
+import com.larswerkman.holocolorpicker.SVBar;
+import com.larswerkman.holocolorpicker.SaturationBar;
+import com.larswerkman.holocolorpicker.SaturationBar.OnSaturationChangedListener;
+import com.larswerkman.holocolorpicker.ValueBar;
+import com.larswerkman.holocolorpicker.ValueBar.OnValueChangedListener;
 import com.xszconfig.painter.view.Sketchpad;
 import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.ToastUtil;
@@ -40,6 +48,12 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     RelativeLayout sizePickerLayout, alphaPickerLayout;
     ImageView sizePickerPoint, alphaPickerPoint;
     ImageView undo, redo;
+
+    private ColorPicker picker;
+    private SVBar svBar;
+    private OpacityBar opacityBar;
+    private SaturationBar saturationBar;
+    private ValueBar valueBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,8 +87,60 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
         alphaPickerPoint.setOnTouchListener(this);
         undo.setOnClickListener(this);
         redo.setOnClickListener(this);
+        
+        setupColorPicker();
     }
-    
+
+    private void setupColorPicker() {
+//      TODO something wrong with the layout
+        picker = (ColorPicker) findViewById(R.id.picker);
+        svBar = (SVBar) findViewById(R.id.svbar);
+        opacityBar = (OpacityBar) findViewById(R.id.opacitybar);
+        saturationBar = (SaturationBar) findViewById(R.id.saturationbar);
+        valueBar = (ValueBar) findViewById(R.id.valuebar);
+
+        picker.addSVBar(svBar);
+        picker.addOpacityBar(opacityBar);
+        picker.addSaturationBar(saturationBar);
+        picker.addValueBar(valueBar);
+        picker.setOnColorChangedListener(new OnColorChangedListener()
+        {
+            
+            @Override
+            public void onColorChanged(int color) {
+                // TODO Auto-generated method stub
+                
+            }
+        });
+        opacityBar.setOnOpacityChangedListener(new OpacityBar.OnOpacityChangedListener()
+        {
+            
+            @Override
+            public void onOpacityChanged(int opacity) {
+                // TODO Auto-generated method stub
+                
+            }
+        });
+        valueBar.setOnValueChangedListener(new OnValueChangedListener()
+        {
+            
+            @Override
+            public void onValueChanged(int value) {
+                // TODO Auto-generated method stub
+                
+            }
+        });
+        saturationBar.setOnSaturationChangedListener(new OnSaturationChangedListener(){
+
+            @Override
+            public void onSaturationChanged(int saturation) {
+                // TODO Auto-generated method stub
+                
+            }
+            
+        });
+    }
+
     // template function to replace findViewById()
     public <T> T findView(int viewId){
         return (T) findViewById(viewId);
@@ -304,4 +370,5 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
         }
         return isSuccessful;
     }
+
 }
