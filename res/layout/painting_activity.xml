@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:pushtouch="http://schemas.android.com/apk/res-auto"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <com.xszconfig.painter.view.Sketchpad
+        android:id="@+id/sketchpad"
+        android:layout_width="match_parent"
+        android:layout_above="@+id/undo_redo_layout"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/bar_picker_layout"
+        android:layout_width="match_parent"
+        android:baselineAligned="false"
+        android:layout_alignParentTop="true"
+        android:layout_height="wrap_content" >
+
+        <RelativeLayout
+            android:id="@+id/size_picker"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="5dp" >
+
+            <ImageView
+                android:id="@+id/size_picker_bg"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/bar_picker_bg_height"
+                android:src="@drawable/seek_width_bg" />
+
+            <ImageView
+                android:id="@+id/size_picker_point"
+                android:layout_width="@dimen/bar_picker_point_diameter"
+                android:layout_height="@dimen/bar_picker_point_diameter"
+                android:layout_centerVertical="true"
+                android:src="@drawable/picker_point" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/transparency_picker"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="5dp" >
+
+            <ImageView
+                android:id="@+id/transparency_picker_bg"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/bar_picker_bg_height"
+                android:src="@drawable/transparency_picker_bg" />
+
+            <ImageView
+                android:id="@+id/transparency_picker_point"
+                android:layout_width="@dimen/bar_picker_point_diameter"
+                android:layout_height="@dimen/bar_picker_point_diameter"
+                android:layout_centerVertical="true"
+                android:src="@drawable/picker_point" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout 
+        android:id="@+id/undo_redo_layout"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:background="@android:color/darker_gray" >
+        
+        <ImageView 
+            android:id="@+id/undo"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:src="@drawable/ic_undo"/>
+        
+        <ImageView 
+            android:id="@+id/redo"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:src="@drawable/ic_redo"/>
+        
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottom_meun_layout"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/darker_gray"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/color_picker"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:background="@null"
+            android:gravity="center"
+            android:text="颜色" />
+
+        <Button
+            android:id="@+id/menu_size_picker"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:background="@null"
+            android:gravity="center"
+            android:text="画笔" />
+
+        <Button
+            android:id="@+id/eraser_picker"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:background="@null"
+            android:gravity="center"
+            android:text="橡皮" />
+
+        <Button
+            android:id="@+id/menu_redo"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:background="@null"
+            android:gravity="center"
+            android:text="重做" />
+    </LinearLayout>
+    
+</RelativeLayout>
