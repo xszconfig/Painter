@@ -2,16 +2,20 @@ package com.xszconfig.painter.view;
 
 import java.util.ArrayList;
 import java.util.List;
+import android.R.bool;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.SystemClock;
+import android.text.StaticLayout;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import com.xszconfig.painter.Brush;
 import com.xszconfig.painter.R;
 
@@ -57,10 +61,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		mSurfaceHolder.addCallback(this);
 		this.setFocusable(true);
 
-//		mPaint = new Paint();
-//		mPaint.setColor(Color.WHITE);
-//		mPaint.setStrokeWidth(Brush.DEFAULT_SIZE);
-		
 		curBrush = new Brush();
 		curColor = Action.DEFAULT_COLOR;
 	}
@@ -113,40 +113,54 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		int action = event.getAction();
-		if (action == MotionEvent.ACTION_CANCEL) {
-			return false;
-		}
+	    int action = event.getAction();
+	    if (action == MotionEvent.ACTION_CANCEL) {
+	        return false;
+	    }
 
-		float touchX = event.getRawX();
-		float touchY = event.getRawY();
+	    final long MAX_CLICK_TIME = 100;
 
-		switch (action) {
-		case MotionEvent.ACTION_DOWN:
-		    //clear the removed action list everytime draw something new 
-		    removedActions.clear();
-			setCurAction(touchX, touchY);
-			break;
-		case MotionEvent.ACTION_MOVE:
-			Canvas canvas = mSurfaceHolder.lockCanvas();
-			canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
-			for (Action a : shownActions) {
-				a.draw(canvas);
-			}
-			curAction.move(touchX, touchY);
-			curAction.draw(canvas);
-			mSurfaceHolder.unlockCanvasAndPost(canvas);
-			break;
-		case MotionEvent.ACTION_UP:
-		    //add curAction to the end of the list
-			shownActions.add(curAction);
-			curAction = null;
-			break;
+	    float touchX = event.getRawX();
+	    float touchY = event.getRawY();
 
-		default:
-			break;
-		}
-		return super.onTouchEvent(event);
+	    switch (action) {
+	        case MotionEvent.ACTION_DOWN:
+	            // every touch event creates a new action
+	            setCurAction(touchX, touchY);
+	            break;
+
+	        case MotionEvent.ACTION_MOVE:
+	            Canvas canvas = mSurfaceHolder.lockCanvas();
+	            //To apply every new action, clear the whole canvas and draw all shownActions again.
+	            canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	            for (Action a : shownActions) {
+	                a.draw(canvas);
+	            }
+	            curAction.move(touchX, touchY);
+	            curAction.draw(canvas);
+	            mSurfaceHolder.unlockCanvasAndPost(canvas);
+	            break;
+
+	        case MotionEvent.ACTION_UP:
+	            long eventTotalTime = event.getEventTime() - event.getDownTime();
+	            //separate Click event and draw event
+	            if( eventTotalTime < MAX_CLICK_TIME ) {
+	                this.performClick();
+	                return true;
+
+	            }else {
+	                //clear the removed action list everytime draw something new 
+	                removedActions.clear();
+	                //add curAction to the end of the list
+	                shownActions.add(curAction);
+	                curAction = null;
+	                return true;
+	            }
+
+	        default:
+	            break;
+	    }
+	    return false;
 	}
 
 	public Brush getBrush() {
@@ -165,7 +179,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
         this.curColor = curColor;
     }
 
-    // every touch event creates a new action
 	public void setCurAction(float x, float y) {
 	    Brush newBrush = new Brush();
 	    if( curBrush != null ){ 
@@ -196,6 +209,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		for (Action a : shownActions) {
 			a.draw(canvas);
 		}
+		//TODO do we need a new Paint() here ?
 		canvas.drawBitmap(bmp, 0, 0, null);
 	}
 	

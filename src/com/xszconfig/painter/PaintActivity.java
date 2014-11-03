@@ -17,11 +17,15 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import com.xszconfig.painter.view.Sketchpad;
 import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.ToastUtil;
 
-public class PaintActivity extends Activity implements OnClickListener {
+public class PaintActivity extends Activity implements OnClickListener, OnTouchListener {
 
     private Context mContext;
     private Sketchpad   mSketchpad;
@@ -30,22 +34,51 @@ public class PaintActivity extends Activity implements OnClickListener {
     private AlertDialog mPaintDialog;
     
     ToastUtil mToastUtil;
+    
+    LinearLayout bottomMenuLayout, undoRedoLayout;
+    LinearLayout sizeAndAlphaPickerLayout;
+    RelativeLayout sizePickerLayout, alphaPickerLayout;
+    ImageView sizePickerPoint, alphaPickerPoint;
+    ImageView undo, redo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sketchpad);
+        setContentView(R.layout.painting_activity);
         mContext = PaintActivity.this;
         mToastUtil = new ToastUtil(mContext);
 
         mSketchpad = (Sketchpad) findViewById(R.id.sketchpad);
+        mSketchpad.setOnClickListener(this);
 
         findViewById(R.id.color_picker).setOnClickListener(this);
-        findViewById(R.id.size_picker).setOnClickListener(this);
+        findViewById(R.id.menu_size_picker).setOnClickListener(this);
         findViewById(R.id.eraser_picker).setOnClickListener(this);
-        findViewById(R.id.redo).setOnClickListener(this);
+        findViewById(R.id.menu_redo).setOnClickListener(this);
+       
+        bottomMenuLayout = findView(R.id.bottom_meun_layout);
+        sizeAndAlphaPickerLayout = findView(R.id.bar_picker_layout);
+        sizePickerLayout = findView(R.id.size_picker);
+        alphaPickerLayout = findView(R.id.transparency_picker);
+        undoRedoLayout = findView(R.id.undo_redo_layout);
+        
+        sizePickerPoint = findView(R.id.size_picker_point);
+        alphaPickerPoint = findView(R.id.transparency_picker_point);
+        undo = findView(R.id.undo);
+        redo = findView(R.id.redo);
+        
+        sizePickerPoint.setOnClickListener(this);
+        sizePickerPoint.setOnTouchListener(this);
+        alphaPickerPoint.setOnClickListener(this);
+        alphaPickerPoint.setOnTouchListener(this);
+        undo.setOnClickListener(this);
+        redo.setOnClickListener(this);
     }
     
+    // template function to replace findViewById()
+    public <T> T findView(int viewId){
+        return (T) findViewById(viewId);
+    }
     @Override
     protected void onResume(){
         super.onResume();
@@ -56,25 +89,97 @@ public class PaintActivity extends Activity implements OnClickListener {
         return mSketchpad.onTouchEvent(event);
     }
 
+
+    private int lastX, mx, my;
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        //TODO adjust brush size and transparency
+        
+        switch (v.getId()) {
+            case R.id.size_picker_point:
+                
+                int scrollBoundStart = sizePickerLayout.getLeft();
+                int scrollBoundEnd = sizePickerLayout.getRight();
+                
+                int action = event.getAction();
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+//                       lastX = (int) event.getRawX();
+                        break;
+
+                    case MotionEvent.ACTION_MOVE:
+                        //TODO drag the point image here ! not yet done ! troublesome !
+                        mx = (int)(event.getRawX());    
+                        my = (int)(event.getRawY());    
+                            
+                        v.layout(mx - v.getWidth()/2, my - v.getHeight()/2,
+                                mx + v.getWidth()/2, my + v.getHeight()/2); 
+                       break;
+                       
+                       case MotionEvent.ACTION_UP:
+                           
+                           break;
+                           
+                    default:
+                        break;
+                }
+                
+                break;
+
+            case R.id.transparency_picker_point:
+                
+                break;
+
+            default:
+                break;
+        }
+        return false;
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.color_picker:
                 showColorDialog();
                 break;
-            case R.id.size_picker:
+                
+            case R.id.menu_size_picker:
                 showSizeDialog();
                 break;
+                
             case R.id.eraser_picker:
                 mSketchpad.setColor(Color.WHITE);
                 break;
+                
+            case R.id.menu_redo:
+                mSketchpad.redo();
+                break;
+                
+            case R.id.sketchpad:
+                toggleVisibility(sizeAndAlphaPickerLayout);
+                toggleVisibility(bottomMenuLayout);
+                break;
+
             case R.id.redo:
                 mSketchpad.redo();
+                break;
+
+            case R.id.undo:
+                mSketchpad.undo();
+                break;
+
+            case R.id.size_picker_point:
+                mToastUtil.ShortToast("size point clicked !");
                 break;
 
             default:
                 break;
         }
+    }
+
+    private void toggleVisibility(View view){
+        view.setVisibility(view.getVisibility() == View.VISIBLE ?
+                View.GONE : View.VISIBLE);
     }
 
     private void showSizeDialog() {
