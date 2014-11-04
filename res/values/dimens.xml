@@ -7,4 +7,20 @@
     <dimen name="bar_picker_bg_height">32dp</dimen>
     <dimen name="bar_picker_point_diameter">22dp</dimen>
 
+
+<!--     HoloColorPicker -->
+    <!-- Standart dimens for the color wheel -->
+    <dimen name="color_wheel_radius">250dp</dimen>
+    <dimen name="color_wheel_thickness">18dp</dimen>
+    <dimen name="color_center_halo_radius">90dp</dimen>
+    <dimen name="color_center_radius">150dp</dimen>
+    <dimen name="color_pointer_halo_radius">18dp</dimen>
+    <dimen name="color_pointer_radius">14dp</dimen>
+    
+    <!-- Standart dimens for the bars -->
+    <dimen name="bar_thickness">10dp</dimen>
+    <dimen name="bar_length">240dp</dimen>
+    <dimen name="bar_pointer_radius">10dp</dimen>
+    <dimen name="bar_pointer_halo_radius">14dp</dimen>
+
 </resources>

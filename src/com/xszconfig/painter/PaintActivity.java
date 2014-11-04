@@ -50,7 +50,7 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     ImageView undo, redo;
 
     private ColorPicker picker;
-    private SVBar svBar;
+//    private SVBar svBar;
     private OpacityBar opacityBar;
     private SaturationBar saturationBar;
     private ValueBar valueBar;
@@ -92,14 +92,13 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     }
 
     private void setupColorPicker() {
-//      TODO something wrong with the layout
-        picker = (ColorPicker) findViewById(R.id.picker);
-        svBar = (SVBar) findViewById(R.id.svbar);
+        picker = (ColorPicker) findViewById(R.id.ring_picker);
+//        svBar = (SVBar) findViewById(R.id.svbar);
         opacityBar = (OpacityBar) findViewById(R.id.opacitybar);
         saturationBar = (SaturationBar) findViewById(R.id.saturationbar);
         valueBar = (ValueBar) findViewById(R.id.valuebar);
 
-        picker.addSVBar(svBar);
+//        picker.addSVBar(svBar);
         picker.addOpacityBar(opacityBar);
         picker.addSaturationBar(saturationBar);
         picker.addValueBar(valueBar);
@@ -159,7 +158,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     private int lastX, mx, my;
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        //TODO adjust brush size and transparency
         
         switch (v.getId()) {
             case R.id.size_picker_point:
