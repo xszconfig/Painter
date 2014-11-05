@@ -566,8 +566,9 @@ public class ColorPicker extends View {
 			mValueBar.setValue(mHSV[2]);
 		}
         setNewCenterColor(color);
+	    setOldCenterColor(color);
 	}
-
+	
 	/**
 	 * Convert a color to an angle.
 	 * 
@@ -603,9 +604,14 @@ public class ColorPicker extends View {
 				mSlopX = x - pointerPosition[0];
 				mSlopY = y - pointerPosition[1];
 				mUserIsMovingPointer = true;
+
+				//every touch will make current color the old center color
+				setOldCenterColor(getColor());
 				invalidate();
 			}
+
 			// Check whether the user pressed on the center.
+			// User can press the center to pick up last-used color.
 			else if (x >= -mColorCenterRadius && x <= mColorCenterRadius
 					&& y >= -mColorCenterRadius && y <= mColorCenterRadius
 					&& mShowCenterOldColor) {
@@ -613,13 +619,15 @@ public class ColorPicker extends View {
 				setColor(getOldCenterColor());
 				invalidate();
 			}
-                        // Check whether the user pressed anywhere on the wheel.
-                        else if (Math.sqrt(x*x + y*y)  <= mColorWheelRadius + mColorPointerHaloRadius
-                                        && Math.sqrt(x*x + y*y) >= mColorWheelRadius - mColorPointerHaloRadius
-                                        && mTouchAnywhereOnColorWheelEnabled) {
-                                mUserIsMovingPointer = true;
-                                invalidate();
-                        }
+
+			// Check whether the user pressed anywhere on the wheel.
+			else if (Math.sqrt(x*x + y*y)  <= mColorWheelRadius + mColorPointerHaloRadius
+			        && Math.sqrt(x*x + y*y) >= mColorWheelRadius - mColorPointerHaloRadius
+			        && mTouchAnywhereOnColorWheelEnabled) {
+			    mUserIsMovingPointer = true;
+			    invalidate();
+			}
+
 			// If user did not press pointer or center, report event not handled
 			else{
 				getParent().requestDisallowInterceptTouchEvent(false);
@@ -657,6 +665,7 @@ public class ColorPicker extends View {
 				return false;
 			}
 			break;
+
 		case MotionEvent.ACTION_UP:
 			mUserIsMovingPointer = false;
 			mCenterHaloPaint.setAlpha(0x00);

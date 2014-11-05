@@ -129,8 +129,10 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	            for (Action a : shownActions) {
 	                a.draw(canvas);
 	            }
-	            curAction.move(touchX, touchY);
-	            curAction.draw(canvas);
+	            if (curAction != null){
+	                curAction.move(touchX, touchY);
+	                curAction.draw(canvas);
+	            }
 	            mSurfaceHolder.unlockCanvasAndPost(canvas);
 	            break;
 

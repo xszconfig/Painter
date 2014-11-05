@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.drm.DrmStore.RightsStatus;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -18,17 +19,18 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import com.larswerkman.holocolorpicker.ColorPicker;
 import com.larswerkman.holocolorpicker.ColorPicker.OnColorChangedListener;
 import com.larswerkman.holocolorpicker.OpacityBar;
-import com.larswerkman.holocolorpicker.SVBar;
 import com.larswerkman.holocolorpicker.SaturationBar;
 import com.larswerkman.holocolorpicker.SaturationBar.OnSaturationChangedListener;
 import com.larswerkman.holocolorpicker.ValueBar;
 import com.larswerkman.holocolorpicker.ValueBar.OnValueChangedListener;
+import com.xszconfig.painter.view.Action;
 import com.xszconfig.painter.view.Sketchpad;
 import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.ToastUtil;
@@ -49,6 +51,7 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     ImageView sizePickerPoint, alphaPickerPoint;
     ImageView undo, redo;
 
+    RelativeLayout colorPickerLayout;
     private ColorPicker picker;
 //    private SVBar svBar;
     private OpacityBar opacityBar;
@@ -58,12 +61,17 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        getWindow().setFlags( WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE);
+        
         setContentView(R.layout.painting_activity);
         mContext = PaintActivity.this;
         mToastUtil = new ToastUtil(mContext);
 
         mSketchpad = (Sketchpad) findViewById(R.id.sketchpad);
         mSketchpad.setOnClickListener(this);
+
 
         findViewById(R.id.color_picker).setOnClickListener(this);
         findViewById(R.id.menu_size_picker).setOnClickListener(this);
@@ -92,55 +100,49 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     }
 
     private void setupColorPicker() {
-        picker = (ColorPicker) findViewById(R.id.ring_picker);
-//        svBar = (SVBar) findViewById(R.id.svbar);
-        opacityBar = (OpacityBar) findViewById(R.id.opacitybar);
-        saturationBar = (SaturationBar) findViewById(R.id.saturationbar);
-        valueBar = (ValueBar) findViewById(R.id.valuebar);
+        colorPickerLayout = findView(R.id.color_picker_layout);
+        picker =  findView(R.id.ring_picker);
+//        svBar =  findView(R.id.svbar);
+        opacityBar =  findView(R.id.opacitybar);
+        saturationBar =  findView(R.id.saturationbar);
+        valueBar =  findView(R.id.valuebar);
 
 //        picker.addSVBar(svBar);
         picker.addOpacityBar(opacityBar);
         picker.addSaturationBar(saturationBar);
         picker.addValueBar(valueBar);
-        picker.setOnColorChangedListener(new OnColorChangedListener()
-        {
-            
+
+//      color picker init with color black.
+        picker.setColor(Action.DEFAULT_COLOR);
+        
+        picker.setOnColorChangedListener(new OnColorChangedListener() {
             @Override
             public void onColorChanged(int color) {
-                // TODO Auto-generated method stub
-                
+                mSketchpad.setColor(color);
             }
         });
-        opacityBar.setOnOpacityChangedListener(new OpacityBar.OnOpacityChangedListener()
-        {
-            
+
+        opacityBar.setOnOpacityChangedListener(new OpacityBar.OnOpacityChangedListener() {
             @Override
             public void onOpacityChanged(int opacity) {
-                // TODO Auto-generated method stub
-                
             }
         });
-        valueBar.setOnValueChangedListener(new OnValueChangedListener()
-        {
-            
+
+        valueBar.setOnValueChangedListener(new OnValueChangedListener() {
             @Override
             public void onValueChanged(int value) {
-                // TODO Auto-generated method stub
-                
             }
         });
-        saturationBar.setOnSaturationChangedListener(new OnSaturationChangedListener(){
 
+        saturationBar.setOnSaturationChangedListener(new OnSaturationChangedListener(){
             @Override
             public void onSaturationChanged(int saturation) {
-                // TODO Auto-generated method stub
-                
             }
-            
         });
     }
 
     // template function to replace findViewById()
+    @SuppressWarnings("unchecked")
     public <T> T findView(int viewId){
         return (T) findViewById(viewId);
     }
@@ -204,7 +206,7 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.color_picker:
-                showColorDialog();
+                toggleVisibility(colorPickerLayout);
                 break;
                 
             case R.id.menu_size_picker:
@@ -213,10 +215,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
                 
             case R.id.eraser_picker:
                 mSketchpad.setColor(Color.WHITE);
-                break;
-                
-            case R.id.menu_redo:
-                mSketchpad.redo();
                 break;
                 
             case R.id.sketchpad:
@@ -273,36 +271,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
                             }).create();
         }
         mPaintDialog.show();
-    }
-
-    private void showColorDialog() {
-        if( mColorDialog == null ) {
-            mColorDialog = new AlertDialog.Builder(this)
-                    .setTitle("选择颜色")
-                    .setSingleChoiceItems(new String[] { "红色", "绿色", "蓝色" }, 0,
-                            new DialogInterface.OnClickListener()
-                            {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    switch (which) {
-                                        case 0:
-                                            mSketchpad.setColor(Color.RED);
-                                            break;
-                                        case 1:
-                                            mSketchpad.setColor(Color.GREEN);
-                                            break;
-                                        case 2:
-                                            mSketchpad.setColor(Color.BLUE);
-                                            break;
-
-                                        default:
-                                            break;
-                                    }
-
-                                    dialog.dismiss();
-                                }
-                            }).create();
-        }
-        mColorDialog.show();
     }
 
     private int dip2px(float dpValue) {
