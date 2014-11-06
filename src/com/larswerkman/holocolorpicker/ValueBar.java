@@ -214,7 +214,7 @@ public class ValueBar extends View {
 		mBarPointerHaloPaint.setAlpha(0x50);
 
 		mBarPointerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-		mBarPointerPaint.setColor(0xff81ff00);
+		mBarPointerPaint.setColor(Color.WHITE);
 
 		mPosToSatFactor = 1 / ((float) mBarLength);
 		mSatToPosFactor = ((float) mBarLength) / 1;
@@ -357,7 +357,7 @@ public class ValueBar extends View {
 					&& dimen <= (mBarPointerHaloRadius + mBarLength)) {
 				mBarPointerPosition = Math.round(dimen);
 				calculateColor(Math.round(dimen));
-				mBarPointerPaint.setColor(mColor);
+//				mBarPointerPaint.setColor(mColor);
 				invalidate();
 			}
 			break;
@@ -368,7 +368,7 @@ public class ValueBar extends View {
 						&& dimen <= (mBarPointerHaloRadius + mBarLength)) {
 					mBarPointerPosition = Math.round(dimen);
 					calculateColor(Math.round(dimen));
-					mBarPointerPaint.setColor(mColor);
+//					mBarPointerPaint.setColor(mColor);
 					if (mPicker != null) {
 						mPicker.setNewCenterColor(mColor);
 						mPicker.changeOpacityBarColor(mColor);
@@ -377,7 +377,7 @@ public class ValueBar extends View {
 				} else if (dimen < mBarPointerHaloRadius) {
 					mBarPointerPosition = mBarPointerHaloRadius;
 					mColor = Color.HSVToColor(mHSVColor);
-					mBarPointerPaint.setColor(mColor);
+//					mBarPointerPaint.setColor(mColor);
 					if (mPicker != null) {
 						mPicker.setNewCenterColor(mColor);
 						mPicker.changeOpacityBarColor(mColor);
@@ -386,7 +386,7 @@ public class ValueBar extends View {
 				} else if (dimen > (mBarPointerHaloRadius + mBarLength)) {
 					mBarPointerPosition = mBarPointerHaloRadius + mBarLength;
 					mColor = Color.BLACK;
-					mBarPointerPaint.setColor(mColor);
+//					mBarPointerPaint.setColor(mColor);
 					if (mPicker != null) {
 						mPicker.setNewCenterColor(mColor);
 						mPicker.changeOpacityBarColor(mColor);
@@ -430,7 +430,7 @@ public class ValueBar extends View {
 						color, Color.BLACK }, null, Shader.TileMode.CLAMP);
 		mBarPaint.setShader(shader);
 		calculateColor(mBarPointerPosition);
-		mBarPointerPaint.setColor(mColor);
+//		mBarPointerPaint.setColor(mColor);
 		if (mPicker != null) {
 			mPicker.setNewCenterColor(mColor);
 			if(mPicker.hasOpacityBar())
@@ -450,7 +450,7 @@ public class ValueBar extends View {
 				.round((mBarLength - (mSatToPosFactor * value))
 						+ mBarPointerHaloRadius);
 		calculateColor(mBarPointerPosition);
-		mBarPointerPaint.setColor(mColor);
+//		mBarPointerPaint.setColor(mColor);
 		if (mPicker != null) {
 			mPicker.setNewCenterColor(mColor);
 			mPicker.changeOpacityBarColor(mColor);

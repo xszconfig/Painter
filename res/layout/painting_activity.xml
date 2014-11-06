@@ -8,15 +8,15 @@
     <com.xszconfig.painter.view.Sketchpad
         android:id="@+id/sketchpad"
         android:layout_width="match_parent"
-        android:layout_above="@+id/undo_redo_layout"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@+id/undo_redo_layout" />
 
     <LinearLayout
         android:id="@+id/bar_picker_layout"
         android:layout_width="match_parent"
-        android:baselineAligned="false"
+        android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_height="wrap_content" >
+        android:baselineAligned="false" >
 
         <RelativeLayout
             android:id="@+id/size_picker"
@@ -29,7 +29,7 @@
                 android:id="@+id/size_picker_bg"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/bar_picker_bg_height"
-                android:src="@drawable/seek_width_bg" />
+                android:src="@drawable/size_picker_bg" />
 
             <ImageView
                 android:id="@+id/size_picker_point"
@@ -39,52 +39,43 @@
                 android:src="@drawable/picker_point" />
         </RelativeLayout>
 
-        <RelativeLayout
-            android:id="@+id/transparency_picker"
+        <!-- 不透明度， 也即是透明度，transparnecy bar -->
+        <com.larswerkman.holocolorpicker.OpacityBar
+            android:id="@+id/opacitybar"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:padding="5dp" >
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/transparency_picker_bg" />
 
-            <ImageView
-                android:id="@+id/transparency_picker_bg"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/bar_picker_bg_height"
-                android:src="@drawable/transparency_picker_bg" />
-
-            <ImageView
-                android:id="@+id/transparency_picker_point"
-                android:layout_width="@dimen/bar_picker_point_diameter"
-                android:layout_height="@dimen/bar_picker_point_diameter"
-                android:layout_centerVertical="true"
-                android:src="@drawable/picker_point" />
-        </RelativeLayout>
     </LinearLayout>
 
-    <LinearLayout 
+    <LinearLayout
         android:id="@+id/undo_redo_layout"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:background="@android:color/darker_gray" >
-        
-        <ImageView 
+        android:background="@android:color/darker_gray"
+        android:orientation="horizontal" >
+
+        <ImageView
             android:id="@+id/undo"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:src="@drawable/ic_undo"/>
-        
-        <ImageView 
+            android:src="@drawable/ic_undo" />
+
+        <ImageView
             android:id="@+id/redo"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:src="@drawable/ic_redo"/>
-        
+            android:src="@drawable/ic_redo" />
     </LinearLayout>
 
     <LinearLayout
@@ -135,57 +126,50 @@
             android:gravity="center"
             android:text="重做" />
     </LinearLayout>
-    
-    <RelativeLayout 
-        android:id="@+id/color_picker_layout" 
+
+    <RelativeLayout
+        android:id="@+id/color_picker_layout"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="48dp"
-        android:layout_height="wrap_content">
-        
-<!--         色相环，决定哪一种颜色被选中 -->
+        android:layout_marginBottom="48dp" >
+
+        <!-- 色相环，决定哪一种颜色被选中 -->
+
         <com.larswerkman.holocolorpicker.ColorPicker
             android:id="@+id/ring_picker"
             android:layout_width="200dp"
-            android:layout_alignParentBottom="true"
-            android:layout_height="200dp" />
+            android:layout_height="200dp"
+            android:layout_alignParentBottom="true" />
 
-<!--         明度，决定颜色的明暗程度 -->
+        <!-- 明度，决定颜色的明暗程度 -->
+
         <com.larswerkman.holocolorpicker.ValueBar
             android:id="@+id/valuebar"
-            android:layout_toRightOf="@id/ring_picker"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
             android:layout_alignBottom="@id/ring_picker"
             android:layout_marginBottom="40dp"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content" />
+            android:layout_toRightOf="@id/ring_picker" />
 
-<!--         色度（饱和度），决定颜色的纯度 -->
+        <!-- 色度（饱和度），决定颜色的纯度 -->
+
         <com.larswerkman.holocolorpicker.SaturationBar
             android:id="@+id/saturationbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/valuebar"
             android:layout_alignTop="@id/ring_picker"
-            android:layout_alignLeft="@id/valuebar"
-            android:layout_marginTop="40dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-<!--         透明度， transparnecy bar -->
-        <com.larswerkman.holocolorpicker.OpacityBar
-            android:id="@+id/opacitybar"
-            android:layout_above="@id/saturationbar"
-            android:layout_alignLeft="@id/valuebar"
-            android:layout_marginBottom="200dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-<!--         SVBar = SaturationBar + ValueBar -->
-<!--         <com.larswerkman.holocolorpicker.SVBar -->
-<!--             android:id="@+id/svbar" -->
-<!--             android:layout_above="@id/picker" -->
-<!--             android:layout_width="wrap_content" -->
-<!--             android:layout_height="wrap_content" /> -->
+            android:layout_marginTop="40dp" />
 
 
-
+        <!-- SVBar = SaturationBar + ValueBar -->
+        <!-- <com.larswerkman.holocolorpicker.SVBar -->
+        <!-- android:id="@+id/svbar" -->
+        <!-- android:layout_above="@id/picker" -->
+        <!-- android:layout_width="wrap_content" -->
+        <!-- android:layout_height="wrap_content" /> -->
 
     </RelativeLayout>
+
 </RelativeLayout>

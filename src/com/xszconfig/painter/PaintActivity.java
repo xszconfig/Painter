@@ -40,15 +40,14 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     private Context mContext;
     private Sketchpad   mSketchpad;
 
-    private AlertDialog mColorDialog;
     private AlertDialog mPaintDialog;
     
     ToastUtil mToastUtil;
     
     LinearLayout bottomMenuLayout, undoRedoLayout;
     LinearLayout sizeAndAlphaPickerLayout;
-    RelativeLayout sizePickerLayout, alphaPickerLayout;
-    ImageView sizePickerPoint, alphaPickerPoint;
+    RelativeLayout sizePickerLayout;
+    ImageView sizePickerPoint;
     ImageView undo, redo;
 
     RelativeLayout colorPickerLayout;
@@ -81,18 +80,14 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
         bottomMenuLayout = findView(R.id.bottom_meun_layout);
         sizeAndAlphaPickerLayout = findView(R.id.bar_picker_layout);
         sizePickerLayout = findView(R.id.size_picker);
-        alphaPickerLayout = findView(R.id.transparency_picker);
         undoRedoLayout = findView(R.id.undo_redo_layout);
         
         sizePickerPoint = findView(R.id.size_picker_point);
-        alphaPickerPoint = findView(R.id.transparency_picker_point);
         undo = findView(R.id.undo);
         redo = findView(R.id.redo);
         
         sizePickerPoint.setOnClickListener(this);
         sizePickerPoint.setOnTouchListener(this);
-        alphaPickerPoint.setOnClickListener(this);
-        alphaPickerPoint.setOnTouchListener(this);
         undo.setOnClickListener(this);
         redo.setOnClickListener(this);
         
@@ -189,10 +184,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
                     default:
                         break;
                 }
-                
-                break;
-
-            case R.id.transparency_picker_point:
                 
                 break;
 

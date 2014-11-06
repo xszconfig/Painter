@@ -18,9 +18,9 @@
     <dimen name="color_pointer_radius">14dp</dimen>
     
     <!-- Standart dimens for the bars -->
-    <dimen name="bar_thickness">10dp</dimen>
+    <dimen name="bar_thickness">25dp</dimen>
     <dimen name="bar_length">240dp</dimen>
     <dimen name="bar_pointer_radius">10dp</dimen>
-    <dimen name="bar_pointer_halo_radius">14dp</dimen>
+    <dimen name="bar_pointer_halo_radius">11dp</dimen>
 
 </resources>

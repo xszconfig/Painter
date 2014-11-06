@@ -214,7 +214,7 @@ public class SaturationBar extends View {
 		mBarPointerHaloPaint.setAlpha(0x50);
 
 		mBarPointerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-		mBarPointerPaint.setColor(0xff81ff00);
+		mBarPointerPaint.setColor(Color.WHITE);
 
 		mPosToSatFactor = 1 / ((float) mBarLength);
 		mSatToPosFactor = ((float) mBarLength) / 1;
@@ -356,7 +356,7 @@ public class SaturationBar extends View {
 					&& dimen <= (mBarPointerHaloRadius + mBarLength)) {
 				mBarPointerPosition = Math.round(dimen);
 				calculateColor(Math.round(dimen));
-				mBarPointerPaint.setColor(mColor);
+//				mBarPointerPaint.setColor(mColor);
 				invalidate();
 			}
 			break;
@@ -367,7 +367,7 @@ public class SaturationBar extends View {
 						&& dimen <= (mBarPointerHaloRadius + mBarLength)) {
 					mBarPointerPosition = Math.round(dimen);
 					calculateColor(Math.round(dimen));
-					mBarPointerPaint.setColor(mColor);
+//					mBarPointerPaint.setColor(mColor);
 					if (mPicker != null) {
 						mPicker.setNewCenterColor(mColor);
 						mPicker.changeValueBarColor(mColor);
@@ -377,7 +377,7 @@ public class SaturationBar extends View {
 				} else if (dimen < mBarPointerHaloRadius) {
 					mBarPointerPosition = mBarPointerHaloRadius;
 					mColor = Color.WHITE;
-					mBarPointerPaint.setColor(mColor);
+//					mBarPointerPaint.setColor(mColor);
 					if (mPicker != null) {
 						mPicker.setNewCenterColor(mColor);
 						mPicker.changeValueBarColor(mColor);
@@ -387,7 +387,7 @@ public class SaturationBar extends View {
 				} else if (dimen > (mBarPointerHaloRadius + mBarLength)) {
 					mBarPointerPosition = mBarPointerHaloRadius + mBarLength;
 					mColor = Color.HSVToColor(mHSVColor);
-					mBarPointerPaint.setColor(mColor);
+//					mBarPointerPaint.setColor(mColor);
 					if (mPicker != null) {
 						mPicker.setNewCenterColor(mColor);
 						mPicker.changeValueBarColor(mColor);
@@ -433,7 +433,7 @@ public class SaturationBar extends View {
 				Shader.TileMode.CLAMP);
 		mBarPaint.setShader(shader);
 		calculateColor(mBarPointerPosition);
-		mBarPointerPaint.setColor(mColor);
+//		mBarPointerPaint.setColor(mColor);
 		if (mPicker != null) {
 			mPicker.setNewCenterColor(mColor);
 			if(mPicker.hasValueBar())
@@ -454,7 +454,7 @@ public class SaturationBar extends View {
 		mBarPointerPosition = Math.round((mSatToPosFactor * saturation))
 				+ mBarPointerHaloRadius;
 		calculateColor(mBarPointerPosition);
-		mBarPointerPaint.setColor(mColor);
+//		mBarPointerPaint.setColor(mColor);
 		if (mPicker != null) {
 			mPicker.setNewCenterColor(mColor);
 			mPicker.changeValueBarColor(mColor);
