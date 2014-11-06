@@ -35,7 +35,8 @@ import com.xszconfig.painter.R;
 
 public class ValueBar extends View {
 
-	/*
+	public static final int COLOR_GREEN = 0xff81ff00;
+    /*
 	 * Constants used to save/restore the instance state.
 	 */
 	private static final String STATE_PARENT = "parent";
@@ -99,6 +100,17 @@ public class ValueBar extends View {
 	 * The rectangle enclosing the bar.
 	 */
 	private RectF mBarRect = new RectF();
+	
+	/*
+	 * {@code Paint} instance used to draw the head(left|top) circle of the bar.
+	 */
+	private Paint mBarHeadCirclePaint;
+
+	/*
+	 * {@code Paint} instance used to draw the tail(right|bottom) circle of the bar.
+	 */
+	private Paint mBarTailCirclePaint;
+
 
 	/**
 	 * {@code Shader} instance used to fill the shader of the paint.
@@ -206,6 +218,8 @@ public class ValueBar extends View {
 
 		mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mBarPaint.setShader(shader);
+		mBarHeadCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mBarTailCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 		mBarPointerPosition = mBarPointerHaloRadius;
 
@@ -293,12 +307,15 @@ public class ValueBar extends View {
 		} else {
 			shader = new LinearGradient(mBarPointerHaloRadius, 0,
 					x1, y1,
-					new int[] { 0xff81ff00, Color.BLACK }, null,
+					new int[] { COLOR_GREEN, Color.BLACK }, null,
 					Shader.TileMode.CLAMP);
-			Color.colorToHSV(0xff81ff00, mHSVColor);
+			Color.colorToHSV(COLOR_GREEN, mHSVColor);
 		}
 
 		mBarPaint.setShader(shader);
+		mBarHeadCirclePaint.setColor(COLOR_GREEN);
+		mBarTailCirclePaint.setColor(Color.BLACK);
+
 		mPosToSatFactor = 1 / ((float) mBarLength);
 		mSatToPosFactor = ((float) mBarLength) / 1;
 
@@ -316,6 +333,10 @@ public class ValueBar extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
+		// Draw the left|top circle of the bar..
+		canvas.drawCircle(mBarRect.left, mBarRect.centerY(), mBarRect.centerY(), mBarHeadCirclePaint);
+		// Draw the right|bottom circle of the bar..
+		canvas.drawCircle(mBarRect.right, mBarRect.centerY(), mBarRect.centerY(), mBarTailCirclePaint);
 		// Draw the bar.
 		canvas.drawRect(mBarRect, mBarPaint);
 
@@ -374,6 +395,7 @@ public class ValueBar extends View {
 						mPicker.changeOpacityBarColor(mColor);
 					}
 					invalidate();
+
 				} else if (dimen < mBarPointerHaloRadius) {
 					mBarPointerPosition = mBarPointerHaloRadius;
 					mColor = Color.HSVToColor(mHSVColor);
@@ -383,6 +405,7 @@ public class ValueBar extends View {
 						mPicker.changeOpacityBarColor(mColor);
 					}
 					invalidate();
+
 				} else if (dimen > (mBarPointerHaloRadius + mBarLength)) {
 					mBarPointerPosition = mBarPointerHaloRadius + mBarLength;
 					mColor = Color.BLACK;
@@ -428,7 +451,11 @@ public class ValueBar extends View {
 		shader = new LinearGradient(mBarPointerHaloRadius, 0,
 				x1, y1, new int[] {
 						color, Color.BLACK }, null, Shader.TileMode.CLAMP);
+
 		mBarPaint.setShader(shader);
+		mBarHeadCirclePaint.setColor(color);
+		mBarTailCirclePaint.setColor(Color.BLACK);
+
 		calculateColor(mBarPointerPosition);
 //		mBarPointerPaint.setColor(mColor);
 		if (mPicker != null) {

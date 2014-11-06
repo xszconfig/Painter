@@ -15,43 +15,30 @@
         android:id="@+id/bar_picker_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:baselineAligned="false" >
+        android:orientation="horizontal"
+        android:layout_alignParentTop="true" >
 
-        <RelativeLayout
+        <com.xszconfig.painter.view.BrushSizeBar
             android:id="@+id/size_picker"
             android:layout_width="0dip"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:padding="5dp" >
-
-            <ImageView
-                android:id="@+id/size_picker_bg"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/bar_picker_bg_height"
-                android:src="@drawable/size_picker_bg" />
-
-            <ImageView
-                android:id="@+id/size_picker_point"
-                android:layout_width="@dimen/bar_picker_point_diameter"
-                android:layout_height="@dimen/bar_picker_point_diameter"
-                android:layout_centerVertical="true"
-                android:src="@drawable/picker_point" />
-        </RelativeLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/size_picker_bg" />
 
         <!-- 不透明度， 也即是透明度，transparnecy bar -->
         <com.larswerkman.holocolorpicker.OpacityBar
             android:id="@+id/opacitybar"
             android:layout_width="0dip"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
-            android:paddingBottom="10dp"
             android:background="@drawable/transparency_picker_bg" />
 
-    </LinearLayout>
+        </LinearLayout>
 
     <LinearLayout
         android:id="@+id/undo_redo_layout"
@@ -150,6 +137,7 @@
             android:layout_height="wrap_content"
             android:layout_alignBottom="@id/ring_picker"
             android:layout_marginBottom="40dp"
+            android:background="@drawable/bar_background"
             android:layout_toRightOf="@id/ring_picker" />
 
         <!-- 色度（饱和度），决定颜色的纯度 -->
@@ -160,6 +148,7 @@
             android:layout_height="wrap_content"
             android:layout_alignLeft="@id/valuebar"
             android:layout_alignTop="@id/ring_picker"
+            android:background="@drawable/bar_background"
             android:layout_marginTop="40dp" />
 
 

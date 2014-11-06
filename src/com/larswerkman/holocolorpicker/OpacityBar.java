@@ -35,7 +35,8 @@ import com.xszconfig.painter.R;
 
 public class OpacityBar extends View {
 
-	/*
+	public static final int COLOR_GREEN = 0xff81ff00;
+    /*
 	 * Constants used to save/restore the instance state.
 	 */
 	private static final String STATE_PARENT = "parent";
@@ -306,13 +307,13 @@ public class OpacityBar extends View {
 		} else {
 			shader = new LinearGradient(mBarPointerHaloRadius, 0,
 					x1, y1, new int[] {
-							0x0081ff00, 0xff81ff00 }, null, Shader.TileMode.CLAMP);
-			Color.colorToHSV(0xff81ff00, mHSVColor);
+							0x0081ff00, COLOR_GREEN }, null, Shader.TileMode.CLAMP);
+			Color.colorToHSV(COLOR_GREEN, mHSVColor);
 		}
 		
 		mBarPaint.setShader(shader);
-		mBarHeadCirclePaint.setColor(Color.HSVToColor(0x00, mHSVColor));
-		mBarTailCirclePaint.setColor(Color.HSVToColor(0xFF, mHSVColor));
+		mBarHeadCirclePaint.setColor(0x0081ff00);
+		mBarTailCirclePaint.setColor(COLOR_GREEN);
 
 		mPosToOpacFactor = 0xFF / ((float) mBarLength);
 		mOpacToPosFactor = ((float) mBarLength) / 0xFF;
@@ -330,12 +331,12 @@ public class OpacityBar extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		// Draw the bar.
-		canvas.drawRect(mBarRect, mBarPaint);
 		// Draw the left|top circle of the bar..
 		canvas.drawCircle(mBarRect.left, mBarRect.centerY(), mBarRect.centerY(), mBarHeadCirclePaint);
 		// Draw the right|bottom circle of the bar..
 		canvas.drawCircle(mBarRect.right, mBarRect.centerY(), mBarRect.centerY(), mBarTailCirclePaint);
+		// Draw the bar.
+		canvas.drawRect(mBarRect, mBarPaint);
 
 		// Calculate the center of the pointer.
 		int cX, cY;
@@ -447,7 +448,7 @@ public class OpacityBar extends View {
 
 		mBarPaint.setShader(shader);
 		mBarHeadCirclePaint.setColor(Color.HSVToColor(0x00, mHSVColor));
-		mBarTailCirclePaint.setColor(Color.HSVToColor(0xFF, mHSVColor));
+		mBarTailCirclePaint.setColor(color);
 
 		calculateColor(mBarPointerPosition);
 //		mBarPointerPaint.setColor(mColor);

@@ -35,7 +35,8 @@ import com.xszconfig.painter.R;
 
 public class SaturationBar extends View {
 
-	/*
+	public static final int COLOR_GREEN = 0xff81ff00;
+    /*
 	 * Constants used to save/restore the instance state.
 	 */
 	private static final String STATE_PARENT = "parent";
@@ -99,6 +100,16 @@ public class SaturationBar extends View {
 	 * The rectangle enclosing the bar.
 	 */
 	private RectF mBarRect = new RectF();
+
+	/*
+	 * {@code Paint} instance used to draw the head(left|top) circle of the bar.
+	 */
+	private Paint mBarHeadCirclePaint;
+
+	/*
+	 * {@code Paint} instance used to draw the tail(right|bottom) circle of the bar.
+	 */
+	private Paint mBarTailCirclePaint;
 
 	/**
 	 * {@code Shader} instance used to fill the shader of the paint.
@@ -206,6 +217,8 @@ public class SaturationBar extends View {
 
 		mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mBarPaint.setShader(shader);
+		mBarHeadCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		mBarTailCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
 		mBarPointerPosition = mBarLength + mBarPointerHaloRadius;
 
@@ -294,11 +307,14 @@ public class SaturationBar extends View {
 		} else {
 			shader = new LinearGradient(mBarPointerHaloRadius, 0,
 					x1, y1, new int[] {
-							Color.WHITE, 0xff81ff00 }, null, Shader.TileMode.CLAMP);
-			Color.colorToHSV(0xff81ff00, mHSVColor);
+							Color.WHITE, COLOR_GREEN }, null, Shader.TileMode.CLAMP);
+			Color.colorToHSV(COLOR_GREEN, mHSVColor);
 		}
 		
 		mBarPaint.setShader(shader);
+		mBarHeadCirclePaint.setColor(Color.WHITE);
+		mBarTailCirclePaint.setColor(COLOR_GREEN);
+
 		mPosToSatFactor = 1 / ((float) mBarLength);
 		mSatToPosFactor = ((float) mBarLength) / 1;
 		
@@ -315,6 +331,10 @@ public class SaturationBar extends View {
 
 	@Override
 	protected void onDraw(Canvas canvas) {
+		// Draw the left|top circle of the bar..
+		canvas.drawCircle(mBarRect.left, mBarRect.centerY(), mBarRect.centerY(), mBarHeadCirclePaint);
+		// Draw the right|bottom circle of the bar..
+		canvas.drawCircle(mBarRect.right, mBarRect.centerY(), mBarRect.centerY(), mBarTailCirclePaint);
 		// Draw the bar.
 		canvas.drawRect(mBarRect, mBarPaint);
 
@@ -431,7 +451,11 @@ public class SaturationBar extends View {
 				x1, y1, new int[] {
 						Color.WHITE, color }, null,
 				Shader.TileMode.CLAMP);
+
 		mBarPaint.setShader(shader);
+		mBarHeadCirclePaint.setColor(Color.WHITE);
+		mBarTailCirclePaint.setColor(color);
+
 		calculateColor(mBarPointerPosition);
 //		mBarPointerPaint.setColor(mColor);
 		if (mPicker != null) {

@@ -35,7 +35,8 @@ import com.xszconfig.painter.R;
 
 public class SVBar extends View {
 
-	/*
+	public static final int COLOR_GREEN = 0xff81ff00;
+    /*
 	 * Constants used to save/restore the instance state.
 	 */
 	private static final String STATE_PARENT = "parent";
@@ -192,7 +193,7 @@ public class SVBar extends View {
 		mBarPointerHaloPaint.setAlpha(0x50);
 
 		mBarPointerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-		mBarPointerPaint.setColor(0xff81ff00);
+		mBarPointerPaint.setColor(COLOR_GREEN);
 
 		mPosToSVFactor = 1 / ((float) mBarLength / 2);
 		mSVToPosFactor = ((float) mBarLength / 2) / 1;
@@ -271,9 +272,9 @@ public class SVBar extends View {
 		} else {
 			shader = new LinearGradient(mBarPointerHaloRadius, 0,
 					x1, y1, new int[] {
-							0xffffffff, 0xff81ff00, 0xff000000 }, null,
+							0xffffffff, COLOR_GREEN, 0xff000000 }, null,
 					Shader.TileMode.CLAMP);
-			Color.colorToHSV(0xff81ff00, mHSVColor);
+			Color.colorToHSV(COLOR_GREEN, mHSVColor);
 		}
 		
 		mBarPaint.setShader(shader);

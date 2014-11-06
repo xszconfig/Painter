@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.drm.DrmStore.RightsStatus;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -18,7 +17,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -31,11 +29,13 @@ import com.larswerkman.holocolorpicker.SaturationBar.OnSaturationChangedListener
 import com.larswerkman.holocolorpicker.ValueBar;
 import com.larswerkman.holocolorpicker.ValueBar.OnValueChangedListener;
 import com.xszconfig.painter.view.Action;
+import com.xszconfig.painter.view.BrushSizeBar;
+import com.xszconfig.painter.view.BrushSizeBar.OnSizeChangedListener;
 import com.xszconfig.painter.view.Sketchpad;
 import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.ToastUtil;
 
-public class PaintActivity extends Activity implements OnClickListener, OnTouchListener {
+public class PaintActivity extends Activity implements OnClickListener {
 
     private Context mContext;
     private Sketchpad   mSketchpad;
@@ -46,8 +46,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     
     LinearLayout bottomMenuLayout, undoRedoLayout;
     LinearLayout sizeAndAlphaPickerLayout;
-    RelativeLayout sizePickerLayout;
-    ImageView sizePickerPoint;
     ImageView undo, redo;
 
     RelativeLayout colorPickerLayout;
@@ -56,6 +54,7 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
     private OpacityBar opacityBar;
     private SaturationBar saturationBar;
     private ValueBar valueBar;
+    private BrushSizeBar sizeBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +70,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
         mSketchpad = (Sketchpad) findViewById(R.id.sketchpad);
         mSketchpad.setOnClickListener(this);
 
-
         findViewById(R.id.color_picker).setOnClickListener(this);
         findViewById(R.id.menu_size_picker).setOnClickListener(this);
         findViewById(R.id.eraser_picker).setOnClickListener(this);
@@ -79,19 +77,24 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
        
         bottomMenuLayout = findView(R.id.bottom_meun_layout);
         sizeAndAlphaPickerLayout = findView(R.id.bar_picker_layout);
-        sizePickerLayout = findView(R.id.size_picker);
         undoRedoLayout = findView(R.id.undo_redo_layout);
-        
-        sizePickerPoint = findView(R.id.size_picker_point);
         undo = findView(R.id.undo);
         redo = findView(R.id.redo);
-        
-        sizePickerPoint.setOnClickListener(this);
-        sizePickerPoint.setOnTouchListener(this);
         undo.setOnClickListener(this);
         redo.setOnClickListener(this);
         
         setupColorPicker();
+        
+        sizeBar = findView(R.id.size_picker);
+        sizeBar.setSize(Brush.DEFAULT_SIZE);
+        sizeBar.setOnSizeChangedListener(new OnSizeChangedListener() {
+            @Override
+            public void onSizeChanged(int value) {
+                mSketchpad.getBrush().setSize(dip2px(value));
+
+                mToastUtil.ShortToast(String.valueOf(value));
+            }
+        });
     }
 
     private void setupColorPicker() {
@@ -151,48 +154,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
         return mSketchpad.onTouchEvent(event);
     }
 
-
-    private int lastX, mx, my;
-    @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        
-        switch (v.getId()) {
-            case R.id.size_picker_point:
-                
-                int scrollBoundStart = sizePickerLayout.getLeft();
-                int scrollBoundEnd = sizePickerLayout.getRight();
-                
-                int action = event.getAction();
-                switch (action) {
-                    case MotionEvent.ACTION_DOWN:
-//                       lastX = (int) event.getRawX();
-                        break;
-
-                    case MotionEvent.ACTION_MOVE:
-                        //TODO drag the point image here ! not yet done ! troublesome !
-                        mx = (int)(event.getRawX());    
-                        my = (int)(event.getRawY());    
-                            
-                        v.layout(mx - v.getWidth()/2, my - v.getHeight()/2,
-                                mx + v.getWidth()/2, my + v.getHeight()/2); 
-                       break;
-                       
-                       case MotionEvent.ACTION_UP:
-                           
-                           break;
-                           
-                    default:
-                        break;
-                }
-                
-                break;
-
-            default:
-                break;
-        }
-        return false;
-    }
-
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -219,10 +180,6 @@ public class PaintActivity extends Activity implements OnClickListener, OnTouchL
 
             case R.id.undo:
                 mSketchpad.undo();
-                break;
-
-            case R.id.size_picker_point:
-                mToastUtil.ShortToast("size point clicked !");
                 break;
 
             default:
