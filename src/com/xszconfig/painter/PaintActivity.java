@@ -80,7 +80,7 @@ public class PaintActivity extends Activity implements OnClickListener {
         sizeBar = findView(R.id.size_picker);
         sizeBar.setOnSizeChangedListener(new OnSizeChangedListener() {
             @Override
-            public void onSizeChanged(int value) {
+            public void onSizeChanged(float value) {
                 mSketchpad.getBrush().setSize(dip2px(value));
             }
         });

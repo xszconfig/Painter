@@ -23,17 +23,14 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import com.larswerkman.holocolorpicker.ColorPicker;
-import com.larswerkman.holocolorpicker.SVBar;
 import com.xszconfig.painter.Brush;
 import com.xszconfig.painter.R;
 
@@ -42,16 +39,14 @@ public class BrushSizeBar extends View {
 
 	public static final int COLOR_GREEN = 0xff81ff00;
 	
-	private static final int MAX_SIZE = 31;
-	private static final int MIN_SIZE = 1;
+	private static final float MAX_SIZE = 26.0f;
+	private static final float MIN_SIZE = 1.0f;
 	
     /*
 	 * Constants used to save/restore the instance state.
 	 */
 	private static final String STATE_PARENT = "parent";
-	private static final String STATE_COLOR = "color";
 	private static final String STATE_VALUE = "value";
-	private static final String STATE_ORIENTATION = "orientation";
 	
 	/**
 	 * Constants used to identify orientation.
@@ -64,7 +59,7 @@ public class BrushSizeBar extends View {
 	 */
 	private static final boolean ORIENTATION_DEFAULT = ORIENTATION_HORIZONTAL;
 
-	private int sizeRange = MAX_SIZE - MIN_SIZE;
+	private float sizeRange = MAX_SIZE - MIN_SIZE;
 	/**
 	 * The thickness of the bar.
 	 */
@@ -112,11 +107,6 @@ public class BrushSizeBar extends View {
 	private RectF mBarRect = new RectF();
 
 	/**
-	 * {@code Shader} instance used to fill the shader of the paint.
-	 */
-	private Shader shader;
-
-	/**
 	 * {@code true} if the user clicked on the pointer to start the move mode. <br>
 	 * {@code false} once the user stops touching the screen.
 	 * 
@@ -124,37 +114,20 @@ public class BrushSizeBar extends View {
 	 */
 	private boolean mIsMovingPointer;
 
-	/**
-	 * The ARGB value of the currently selected color.
-	 */
-	private int mColor;
-
-	private int mSize;
-	/**
-	 * An array of floats that can be build into a {@code Color} <br>
-	 * Where we can extract the color from.
-	 */
-	private float[] mHSVColor = new float[3];
+	private float mSize;
 
 	/**
-	 * Factor used to calculate the position to the Opacity on the bar.
+	 * Factor used to calculate the position to the size on the bar.
 	 */
-	private float mPosToSatFactor;
 	
 	private float mPosToSizeFactor;
 	
 	/**
-	 * Factor used to calculate the Opacity to the postion on the bar.
+	 * Factor used to calculate the size to the postion on the bar.
 	 */
-	private float mSatToPosFactor;
 	
 	private float mSizeToPosFactor;
 
-	/**
-	 * {@code ColorPicker} instance used to control the ColorPicker.
-	 */
-	private ColorPicker mPicker = null;
-	
 	private Brush mBrush = null;
 
 	/**
@@ -163,32 +136,20 @@ public class BrushSizeBar extends View {
 	private boolean mOrientation;
 	
     /**
-     * Interface and listener so that changes in ValueBar are sent
+     * Interface and listener so that changes in BrushSizeBar are sent
      * to the host activity/fragment
      */
-    private OnValueChangedListener onValueChangedListener;
 
     private OnSizeChangedListener onSizeChangedListener;
     
 	/**
 	 * Value of the latest entry of the onValueChangedListener.
 	 */
-	private int oldChangedListenerValue;
+	private float oldChangedListenerValue;
 
-    public interface OnValueChangedListener {
-        public void onValueChanged(int value);
-    }
-
-    public void setOnValueChangedListener(OnValueChangedListener listener) {
-        this.onValueChangedListener = listener;
-    }
-
-    public OnValueChangedListener getOnValueChangedListener() {
-        return this.onValueChangedListener;
-    }
 
     public interface OnSizeChangedListener {
-        public void onSizeChanged(int size);
+        public void onSizeChanged(float size);
     }
     
     public void setOnSizeChangedListener(OnSizeChangedListener listener){
@@ -238,7 +199,6 @@ public class BrushSizeBar extends View {
 
 		mBarPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mBarPaint.setColor(Color.TRANSPARENT);
-//		mBarPaint.setShader(shader);
 
 		mBarPointerPosition = mBarPointerHaloRadius;
 
@@ -248,9 +208,6 @@ public class BrushSizeBar extends View {
 
 		mBarPointerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		mBarPointerPaint.setColor(Color.WHITE);
-
-		mPosToSatFactor = 1 / ((float) mBarLength);
-		mSatToPosFactor = ((float) mBarLength) / 1;
 
 		mPosToSizeFactor = sizeRange / ((float)mBarLength);
 		mSizeToPosFactor = ((float)mBarLength) / sizeRange ;
@@ -320,24 +277,6 @@ public class BrushSizeBar extends View {
 					(mBarLength + (mBarPointerHaloRadius)));
 		}
 
-		// Update variables that depend of mBarLength.
-		if (!isInEditMode()) {
-			shader = new LinearGradient(mBarPointerHaloRadius, 0,
-					x1, y1,
-					new int[] { Color.HSVToColor(0xFF, mHSVColor), Color.BLACK },
-					null, Shader.TileMode.CLAMP);
-		} else {
-			shader = new LinearGradient(mBarPointerHaloRadius, 0,
-					x1, y1,
-					new int[] { COLOR_GREEN, Color.BLACK }, null,
-					Shader.TileMode.CLAMP);
-			Color.colorToHSV(COLOR_GREEN, mHSVColor);
-		}
-
-//		mBarPaint.setShader(shader);
-		mPosToSatFactor = 1 / ((float) mBarLength);
-		mSatToPosFactor = ((float) mBarLength) / 1;
-
 		mPosToSizeFactor = sizeRange / ((float)mBarLength);
 		mSizeToPosFactor = ((float)mBarLength) / sizeRange ;
 
@@ -392,7 +331,6 @@ public class BrushSizeBar extends View {
 					&& dimen <= (mBarPointerHaloRadius + mBarLength)) {
 				mBarPointerPosition = Math.round(dimen);
 				calculateSize(Math.round(dimen));
-//				mBarPointerPaint.setColor(mColor);
 				invalidate();
 			}
 			break;
@@ -402,15 +340,8 @@ public class BrushSizeBar extends View {
 				// Move the the pointer on the bar.
 				if (dimen >= mBarPointerHaloRadius
 						&& dimen <= (mBarPointerHaloRadius + mBarLength)) {
-				    
-				    //TODO thing goes here!!
 					mBarPointerPosition = Math.round(dimen);
 					calculateSize(mBarPointerPosition);
-//					mBarPointerPaint.setColor(mColor);
-//					if (mPicker != null) {
-//						mPicker.setNewCenterColor(mColor);
-//						mPicker.changeOpacityBarColor(mColor);
-//					}
 					if (mBrush != null){
 					    mBrush.setSize(mSize);
 					}
@@ -418,12 +349,6 @@ public class BrushSizeBar extends View {
 
 				} else if (dimen < mBarPointerHaloRadius) {
 					mBarPointerPosition = mBarPointerHaloRadius;
-//					mColor = Color.HSVToColor(mHSVColor);
-//					mBarPointerPaint.setColor(mColor);
-//					if (mPicker != null) {
-//						mPicker.setNewCenterColor(mColor);
-//						mPicker.changeOpacityBarColor(mColor);
-//					}
 					calculateSize(mBarPointerPosition);
 					if (mBrush != null){
 					    mBrush.setSize(mSize);
@@ -432,12 +357,6 @@ public class BrushSizeBar extends View {
 					
 				} else if (dimen > (mBarPointerHaloRadius + mBarLength)) {
 					mBarPointerPosition = mBarPointerHaloRadius + mBarLength;
-					mColor = Color.TRANSPARENT;
-//					mBarPointerPaint.setColor(mColor);
-//					if (mPicker != null) {
-//						mPicker.setNewCenterColor(mColor);
-//						mPicker.changeOpacityBarColor(mColor);
-//					}
 					calculateSize(mBarPointerPosition);
 					if (mBrush != null){
 					    mBrush.setSize(mSize);
@@ -445,11 +364,6 @@ public class BrushSizeBar extends View {
 					invalidate();
 				}
 			}
-			
-//			if(onValueChangedListener != null && oldChangedListenerValue != mColor){
-//	            onValueChangedListener.onValueChanged(mColor);
-//	            oldChangedListenerValue = mColor;
-//			}
 			
 			if( onSizeChangedListener != null && oldChangedListenerValue != mSize){
 			    onSizeChangedListener.onSizeChanged(mSize);
@@ -464,68 +378,7 @@ public class BrushSizeBar extends View {
 		return true;
 	}
 
-	/**
-	 * Set the bar color. <br>
-	 * <br>
-	 * Its discouraged to use this method.
-	 * 
-	 * @param color
-	 */
-	public void setColor(int color) {
-		int x1, y1;
-		if(mOrientation == ORIENTATION_HORIZONTAL) {
-			x1 = (mBarLength + mBarPointerHaloRadius);
-			y1 = mBarThickness;
-		}
-		else {
-			x1 = mBarThickness;
-			y1 = (mBarLength + mBarPointerHaloRadius);
-		}
-		
-		Color.colorToHSV(color, mHSVColor);
-		shader = new LinearGradient(mBarPointerHaloRadius, 0,
-				x1, y1, new int[] {
-						color, Color.BLACK }, null, Shader.TileMode.CLAMP);
-//		mBarPaint.setShader(shader);
-		calculateSize(mBarPointerPosition);
-//		mBarPointerPaint.setColor(mColor);
-//		if (mPicker != null) {
-//			mPicker.setNewCenterColor(mColor);
-//			if(mPicker.hasOpacityBar())
-//				mPicker.changeOpacityBarColor(mColor);
-//		}
-					if (mBrush != null){
-					    mBrush.setSize(mSize);
-					}
-		invalidate();
-	}
-
-	/**
-	 * Set the pointer on the bar. With the opacity value.
-	 * 
-	 * @param value
-	 *            float between 0 > 1
-	 */
-	public void setValue(float value) {
-//		mBarPointerPosition = Math
-//				.round((mBarLength - (mSatToPosFactor * value))
-//						+ mBarPointerHaloRadius);
-//		mBarPointerPaint.setColor(mColor);
-//		if (mPicker != null) {
-//			mPicker.setNewCenterColor(mColor);
-//			mPicker.changeOpacityBarColor(mColor);
-//		}
-//		mBarPointerPosition = Math
-//				.round((mBarLength - (mSizeToPosFactor * value))
-//						+ mBarPointerHaloRadius);
-//		calculateSize(mBarPointerPosition);
-//					if (mBrush != null){
-//					    mBrush.setSize(mSize);
-//					}
-//		invalidate();
-	}
-    
-	public void setSize(int size){
+	public void setSize(float size){
 	    
 		mBarPointerPosition = Math.round(size * mSizeToPosFactor + mBarPointerHaloRadius);
 		calculateSize(mBarPointerPosition);
@@ -536,14 +389,12 @@ public class BrushSizeBar extends View {
 	}
 	
         /**
-         * Calculate the color selected by the pointer on the bar.
+         * Calculate the size selected by the pointer on the bar.
          * 
          * @param positon
-         *            Coordinate of the pointer.
+         *            position of the pointer.
          */
 	private void calculateSize(int positon) {
-	    mColor = Color.TRANSPARENT;
-	    
 	    // range check
 	    positon = (positon < mBarPointerHaloRadius + 1) ?  (mBarPointerHaloRadius + 1) : positon;
 	    positon = positon > (mBarLength + mBarPointerHaloRadius) ? (mBarLength + mBarPointerHaloRadius) : positon;
@@ -554,31 +405,12 @@ public class BrushSizeBar extends View {
 	    // range check
 	    mSize = mSize < MIN_SIZE ? MIN_SIZE : mSize ;
 	    mSize = mSize > MAX_SIZE ? MAX_SIZE : mSize ;
+	    
+	    Log.e("calculateSize()--->", "" + mSize + " , " + mPosToSizeFactor);//TODO for test only!
     }
 
-	/**
-	 * Get the currently selected color.
-	 * 
-	 * @return The ARGB value of the currently selected color.
-	 */
-	public int getColor() {
-		return mColor;
-	}
-
-	public int getSize(){
+	public float getSize(){
 	    return mSize;
-	}
-	/**
-	 * Adds a {@code ColorPicker} instance to the bar. <br>
-	 * <br>
-	 * WARNING: Don't change the color picker. it is done already when the bar
-	 * is added to the ColorPicker
-	 * 
-	 * @see ColorPicker#addSVBar(SVBar)
-	 * @param picker
-	 */
-	public void setColorPicker(ColorPicker picker) {
-		mPicker = picker;
 	}
 
 	public void setBrush(Brush brush){
@@ -588,26 +420,17 @@ public class BrushSizeBar extends View {
 	@Override
 	protected Parcelable onSaveInstanceState() {
 		Parcelable superState = super.onSaveInstanceState();
-
 		Bundle state = new Bundle();
 		state.putParcelable(STATE_PARENT, superState);
-		state.putFloatArray(STATE_COLOR, mHSVColor);
-
-		float[] hsvColor = new float[3];
-		Color.colorToHSV(mColor, hsvColor);
-		state.putFloat(STATE_VALUE, hsvColor[2]);
-
+		state.putFloat(STATE_VALUE, mSize);
 		return state;
 	}
 
 	@Override
 	protected void onRestoreInstanceState(Parcelable state) {
 		Bundle savedState = (Bundle) state;
-
 		Parcelable superState = savedState.getParcelable(STATE_PARENT);
 		super.onRestoreInstanceState(superState);
-
-		setColor(Color.HSVToColor(savedState.getFloatArray(STATE_COLOR)));
-//		setValue(savedState.getFloat(STATE_VALUE));
+		setSize(savedState.getFloat(STATE_VALUE));
 	}
 }

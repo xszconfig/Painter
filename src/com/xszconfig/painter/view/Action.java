@@ -49,13 +49,13 @@ public class Action {
 
 	public void draw(Canvas canvas){
 	    Paint paint = new Paint();
-	    paint.setAntiAlias(true);
-	    paint.setDither(true);
+	    paint.setAntiAlias(true);//反锯齿效果
+	    paint.setDither(true);//抖动，不懂O.o
 	    paint.setColor(mColor);
-	    paint.setStrokeWidth(mBrush.getSize());
-	    paint.setStyle(Paint.Style.STROKE);
-	    paint.setStrokeJoin(Paint.Join.ROUND);
-	    paint.setStrokeCap(Paint.Cap.ROUND);
+	    paint.setStrokeWidth(mBrush.getSize());//画笔宽度
+	    paint.setStyle(Paint.Style.STROKE);//画笔效果，STROKE只描边、FILL填充路径范围空间、FILL_AND_STROKE填充并描边
+	    paint.setStrokeJoin(Paint.Join.ROUND);//笔画拐弯方式， ROUND圆狐拐角、BEVEL直线外沿拐角、MITER斜切效果拐角
+	    paint.setStrokeCap(Paint.Cap.ROUND);//帽子，笔画头尾是否向外延伸，BUTT不延伸、ROUND延伸出半圆、SQUARE延伸出方形(就是比不延伸长一点，但效果一致)
 	    canvas.drawPath(mPath, paint);
 	};
 

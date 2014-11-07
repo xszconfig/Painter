@@ -5,7 +5,7 @@ import com.xszconfig.painter.view.BrushSizeBar;
 public class Brush {
     public static final int DEFAULT_SIZE = 5;
     BrushType mBrushType;
-    int size;
+    float size;
     
     private BrushSizeBar mBrushSizeBar;
     
@@ -14,7 +14,7 @@ public class Brush {
         this.size = DEFAULT_SIZE;
     }
     
-    public Brush(BrushType mBrushType, int size){
+    public Brush(BrushType mBrushType, float size){
         this.mBrushType = mBrushType;
         this.size = size;
     }
@@ -32,11 +32,11 @@ public class Brush {
         this.mBrushType = mBrushType;
     }
 
-    public int getSize() {
+    public float getSize() {
         return size;
     }
 
-    public void setSize(int size) {
+    public void setSize(float size) {
         this.size = size;
     }
     
