@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -80,8 +81,9 @@ public class PaintActivity extends Activity implements OnClickListener {
         sizeBar = findView(R.id.size_picker);
         sizeBar.setOnSizeChangedListener(new OnSizeChangedListener() {
             @Override
-            public void onSizeChanged(float value) {
-                mSketchpad.getBrush().setSize(dip2px(value));
+            public void onSizeChanged(float size) {
+                mSketchpad.getBrush().setSize(size);
+                Log.e("PaintActivity onSizeChanged()--->", "size: " + mSketchpad.getBrush().getSize());
             }
         });
 

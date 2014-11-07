@@ -39,8 +39,8 @@ public class BrushSizeBar extends View {
 
 	public static final int COLOR_GREEN = 0xff81ff00;
 	
-	private static final float MAX_SIZE = 26.0f;
-	private static final float MIN_SIZE = 1.0f;
+	private static final float MAX_SIZE = 100.0f;
+	private static final float MIN_SIZE = 5.0f;
 	
     /*
 	 * Constants used to save/restore the instance state.
