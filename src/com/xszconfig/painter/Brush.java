@@ -1,9 +1,13 @@
 package com.xszconfig.painter;
 
+import com.xszconfig.painter.view.BrushSizeBar;
+
 public class Brush {
     public static final int DEFAULT_SIZE = 5;
     BrushType mBrushType;
     int size;
+    
+    private BrushSizeBar mBrushSizeBar;
     
     public Brush() {
         this.mBrushType = BrushType.Pencil;
@@ -15,6 +19,11 @@ public class Brush {
         this.size = size;
     }
 
+    public void addBrushSizeBar(BrushSizeBar brushSizeBar){
+        mBrushSizeBar = brushSizeBar;
+        mBrushSizeBar.setBrush(this);
+        mBrushSizeBar.setSize(getSize());
+    }
     public BrushType getBrushType() {
         return mBrushType;
     }

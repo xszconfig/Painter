@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
@@ -28,10 +27,10 @@ import com.larswerkman.holocolorpicker.SaturationBar;
 import com.larswerkman.holocolorpicker.SaturationBar.OnSaturationChangedListener;
 import com.larswerkman.holocolorpicker.ValueBar;
 import com.larswerkman.holocolorpicker.ValueBar.OnValueChangedListener;
-import com.xszconfig.painter.view.Action;
 import com.xszconfig.painter.view.BrushSizeBar;
 import com.xszconfig.painter.view.BrushSizeBar.OnSizeChangedListener;
 import com.xszconfig.painter.view.Sketchpad;
+import com.xszconfig.utils.AlertDialogUtil;
 import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.ToastUtil;
 
@@ -39,9 +38,6 @@ public class PaintActivity extends Activity implements OnClickListener {
 
     private Context mContext;
     private Sketchpad   mSketchpad;
-
-    private AlertDialog mPaintDialog;
-    
     ToastUtil mToastUtil;
     
     LinearLayout bottomMenuLayout, undoRedoLayout;
@@ -50,7 +46,6 @@ public class PaintActivity extends Activity implements OnClickListener {
 
     RelativeLayout colorPickerLayout;
     private ColorPicker picker;
-//    private SVBar svBar;
     private OpacityBar opacityBar;
     private SaturationBar saturationBar;
     private ValueBar valueBar;
@@ -71,9 +66,7 @@ public class PaintActivity extends Activity implements OnClickListener {
         mSketchpad.setOnClickListener(this);
 
         findViewById(R.id.color_picker).setOnClickListener(this);
-        findViewById(R.id.menu_size_picker).setOnClickListener(this);
         findViewById(R.id.eraser_picker).setOnClickListener(this);
-        findViewById(R.id.menu_redo).setOnClickListener(this);
        
         bottomMenuLayout = findView(R.id.bottom_meun_layout);
         sizeAndAlphaPickerLayout = findView(R.id.bar_picker_layout);
@@ -84,34 +77,31 @@ public class PaintActivity extends Activity implements OnClickListener {
         redo.setOnClickListener(this);
         
         setupColorPicker();
-        
         sizeBar = findView(R.id.size_picker);
-        sizeBar.setSize(Brush.DEFAULT_SIZE);
         sizeBar.setOnSizeChangedListener(new OnSizeChangedListener() {
             @Override
             public void onSizeChanged(int value) {
                 mSketchpad.getBrush().setSize(dip2px(value));
-
-                mToastUtil.ShortToast(String.valueOf(value));
             }
         });
+
+        mSketchpad.setColor(picker.getColor());
+        mSketchpad.getBrush().addBrushSizeBar(sizeBar);
     }
 
     private void setupColorPicker() {
         colorPickerLayout = findView(R.id.color_picker_layout);
         picker =  findView(R.id.ring_picker);
-//        svBar =  findView(R.id.svbar);
         opacityBar =  findView(R.id.opacitybar);
         saturationBar =  findView(R.id.saturationbar);
         valueBar =  findView(R.id.valuebar);
 
-//        picker.addSVBar(svBar);
         picker.addOpacityBar(opacityBar);
         picker.addSaturationBar(saturationBar);
         picker.addValueBar(valueBar);
 
 //      color picker init with color black.
-        picker.setColor(Action.DEFAULT_COLOR);
+//        picker.setColor(Action.DEFAULT_COLOR);
         
         picker.setOnColorChangedListener(new OnColorChangedListener() {
             @Override
@@ -161,10 +151,6 @@ public class PaintActivity extends Activity implements OnClickListener {
                 toggleVisibility(colorPickerLayout);
                 break;
                 
-            case R.id.menu_size_picker:
-                showSizeDialog();
-                break;
-                
             case R.id.eraser_picker:
                 mSketchpad.setColor(Color.WHITE);
                 break;
@@ -192,35 +178,6 @@ public class PaintActivity extends Activity implements OnClickListener {
                 View.GONE : View.VISIBLE);
     }
 
-    private void showSizeDialog() {
-        if( mPaintDialog == null ) {
-            mPaintDialog = new AlertDialog.Builder(this)
-                    .setTitle("选择画笔粗细")
-                    .setSingleChoiceItems(new String[] { "细", "中", "粗" }, 0,
-                            new DialogInterface.OnClickListener()
-                            {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    switch (which) {
-                                        case 0:
-                                            mSketchpad.getBrush().setSize(dip2px(5));
-                                            break;
-                                        case 1:
-                                            mSketchpad.getBrush().setSize(dip2px(10));
-                                            break;
-                                        case 2:
-                                            mSketchpad.getBrush().setSize(dip2px(15));
-                                            break;
-                                        default:
-                                            break;
-                                    }
-
-                                    dialog.dismiss();
-                                }
-                            }).create();
-        }
-        mPaintDialog.show();
-    }
-
     private int dip2px(float dpValue) {
         final float scale = getResources().getDisplayMetrics().density;
         return (int) (dpValue * scale + 0.5f);
@@ -236,29 +193,48 @@ public class PaintActivity extends Activity implements OnClickListener {
     public boolean onOptionsItemSelected(MenuItem item) {
         if( item.getItemId() == 1 ) {
 
-            if (!Environment.getExternalStorageState().equals(
-                    Environment.MEDIA_MOUNTED)) {
-                mToastUtil.LongToast("External SD card not mounted");
-                return true;
-            }
-            
-            String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_PATH;
-            String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis())+ ".png";
-            File file = new File(directory, filename);
-            boolean isSaved = savePicAsPNG(mSketchpad.getBitmap(), file);
-            if( isSaved )
-                mToastUtil.LongToast("image saved: " + file.getPath());
-            else
-                mToastUtil.LongToast("fail to save image, checkout SD card");
+            tryToSavePainting();
         }
         return true;
     }
 
+    private void tryToSavePainting() {
+        if (!Environment.getExternalStorageState().equals(
+                Environment.MEDIA_MOUNTED)) {
+            mToastUtil.LongToast("External SD card not mounted");
+            return ;
+        }
+        
+        String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_PATH;
+        String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis())+ ".png";
+        File file = new File(directory, filename);
+        boolean isSaved = savePicAsPNG(mSketchpad.getBitmap(), file);
+        if( isSaved )
+            mToastUtil.LongToast("image saved: " + file.getPath());
+        else
+            mToastUtil.LongToast("fail to save image, checkout SD card");
+    }
+
     @Override
     public void onBackPressed() {
-        if( !mSketchpad.undo() ) {
-            super.onBackPressed();
-        }
+        AlertDialogUtil.showDialogWithTwoChoices(mContext, "Exit Without Saving ?",
+
+                "Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        tryToSavePainting();
+                        finish();
+                    }
+                },
+
+                "Don\'t Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                        
+                    }
+                });
+
     }
 
     public static boolean savePicAsPNG(Bitmap b, File file){

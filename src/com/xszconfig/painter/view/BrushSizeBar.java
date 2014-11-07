@@ -42,7 +42,7 @@ public class BrushSizeBar extends View {
 
 	public static final int COLOR_GREEN = 0xff81ff00;
 	
-	private static final int MAX_SIZE = 41;
+	private static final int MAX_SIZE = 31;
 	private static final int MIN_SIZE = 1;
 	
     /*
@@ -341,13 +341,9 @@ public class BrushSizeBar extends View {
 		mPosToSizeFactor = sizeRange / ((float)mBarLength);
 		mSizeToPosFactor = ((float)mBarLength) / sizeRange ;
 
-		float[] hsvColor = new float[3];
-		Color.colorToHSV(mColor, hsvColor);
-
 		if (!isInEditMode()) {
-			mBarPointerPosition = Math
-					.round((mBarLength - (mSatToPosFactor * hsvColor[2]))
-							+ mBarPointerHaloRadius);
+		mBarPointerPosition = Math.round(mSize * mSizeToPosFactor + mBarPointerHaloRadius);
+		
 		} else {
 			mBarPointerPosition = mBarPointerHaloRadius;
 		}
@@ -406,6 +402,8 @@ public class BrushSizeBar extends View {
 				// Move the the pointer on the bar.
 				if (dimen >= mBarPointerHaloRadius
 						&& dimen <= (mBarPointerHaloRadius + mBarLength)) {
+				    
+				    //TODO thing goes here!!
 					mBarPointerPosition = Math.round(dimen);
 					calculateSize(mBarPointerPosition);
 //					mBarPointerPaint.setColor(mColor);
@@ -509,27 +507,27 @@ public class BrushSizeBar extends View {
 	 *            float between 0 > 1
 	 */
 	public void setValue(float value) {
-		mBarPointerPosition = Math
-				.round((mBarLength - (mSatToPosFactor * value))
-						+ mBarPointerHaloRadius);
+//		mBarPointerPosition = Math
+//				.round((mBarLength - (mSatToPosFactor * value))
+//						+ mBarPointerHaloRadius);
 //		mBarPointerPaint.setColor(mColor);
 //		if (mPicker != null) {
 //			mPicker.setNewCenterColor(mColor);
 //			mPicker.changeOpacityBarColor(mColor);
 //		}
-		mBarPointerPosition = Math
-				.round((mBarLength - (mSizeToPosFactor * value))
-						+ mBarPointerHaloRadius);
-		calculateSize(mBarPointerPosition);
-					if (mBrush != null){
-					    mBrush.setSize(mSize);
-					}
-		invalidate();
+//		mBarPointerPosition = Math
+//				.round((mBarLength - (mSizeToPosFactor * value))
+//						+ mBarPointerHaloRadius);
+//		calculateSize(mBarPointerPosition);
+//					if (mBrush != null){
+//					    mBrush.setSize(mSize);
+//					}
+//		invalidate();
 	}
     
 	public void setSize(int size){
-	    //TODO something wrong here.
-		mBarPointerPosition = (int) (size * mSizeToPosFactor + mBarPointerHaloRadius);
+	    
+		mBarPointerPosition = Math.round(size * mSizeToPosFactor + mBarPointerHaloRadius);
 		calculateSize(mBarPointerPosition);
 	    if( mBrush != null ) {
 	        mBrush.setSize(mSize);
@@ -544,22 +542,18 @@ public class BrushSizeBar extends View {
          *            Coordinate of the pointer.
          */
 	private void calculateSize(int positon) {
-//	    coord = coord - mBarPointerHaloRadius;
-//	    if (coord < 0) {
-//	    	coord = 0;
-//	    } else if (coord > mBarLength) {
-//	    	coord = mBarLength;
-//	    }
-//	    mColor = Color.HSVToColor(new float[] { mHSVColor[0],
-//		    				    mHSVColor[1],
-//		    				    (float) (1 - (mPosToSatFactor * coord)) });
 	    mColor = Color.TRANSPARENT;
 	    
-	    
-	    positon = positon <= mBarPointerHaloRadius ?  mBarPointerHaloRadius : positon;
+	    // range check
+	    positon = (positon < mBarPointerHaloRadius + 1) ?  (mBarPointerHaloRadius + 1) : positon;
 	    positon = positon > (mBarLength + mBarPointerHaloRadius) ? (mBarLength + mBarPointerHaloRadius) : positon;
-	    //TODO need test to see if correct, define the rule here !
-	    mSize = (int)((positon - mBarPointerHaloRadius) * mPosToSizeFactor);
+	    
+	    //TODO !!! something seriously wrong here !!!
+	    mSize = Math.round((positon - mBarPointerHaloRadius) * mPosToSizeFactor);
+	    
+	    // range check
+	    mSize = mSize < MIN_SIZE ? MIN_SIZE : mSize ;
+	    mSize = mSize > MAX_SIZE ? MAX_SIZE : mSize ;
     }
 
 	/**
@@ -614,6 +608,6 @@ public class BrushSizeBar extends View {
 		super.onRestoreInstanceState(superState);
 
 		setColor(Color.HSVToColor(savedState.getFloatArray(STATE_COLOR)));
-		setValue(savedState.getFloat(STATE_VALUE));
+//		setValue(savedState.getFloat(STATE_VALUE));
 	}
 }
