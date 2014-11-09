@@ -4,7 +4,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import com.xszconfig.painter.Brush;
 
 /*
  * This is the class stands for every stroke when user is drawing.

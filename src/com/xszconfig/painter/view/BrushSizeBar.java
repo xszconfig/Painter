@@ -1,21 +1,3 @@
-
-
-/*
- * Copyright 2012 Lars Werkman
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.xszconfig.painter.view;
 
 import android.content.Context;
@@ -28,10 +10,8 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import com.xszconfig.painter.Brush;
 import com.xszconfig.painter.R;
 
 
@@ -42,7 +22,7 @@ public class BrushSizeBar extends View {
 	private static final float MAX_SIZE = 100.0f;
 	private static final float MIN_SIZE = 5.0f;
 	
-    /*
+    /**
 	 * Constants used to save/restore the instance state.
 	 */
 	private static final String STATE_PARENT = "parent";
@@ -399,14 +379,10 @@ public class BrushSizeBar extends View {
 	    positon = (positon < mBarPointerHaloRadius + 1) ?  (mBarPointerHaloRadius + 1) : positon;
 	    positon = positon > (mBarLength + mBarPointerHaloRadius) ? (mBarLength + mBarPointerHaloRadius) : positon;
 	    
-	    //TODO !!! something seriously wrong here !!!
 	    mSize = Math.round((positon - mBarPointerHaloRadius) * mPosToSizeFactor);
-	    
 	    // range check
 	    mSize = mSize < MIN_SIZE ? MIN_SIZE : mSize ;
 	    mSize = mSize > MAX_SIZE ? MAX_SIZE : mSize ;
-	    
-	    Log.e("calculateSize()--->", "" + mSize + " , " + mPosToSizeFactor);//TODO for test only!
     }
 
 	public float getSize(){

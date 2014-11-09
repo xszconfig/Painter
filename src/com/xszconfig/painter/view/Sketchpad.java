@@ -4,13 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import com.xszconfig.painter.Brush;
+import com.xszconfig.utils.StringUtil;
 
 /*
  * The Sketchpad to draw paintings on. This is a {@link android.view.SurfaceView}.
@@ -26,13 +28,25 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	private Brush curBrush;
 	private int curColor ;
 
-//	private Paint mPaint;
-	//actions shown on the sketchpad
+	/**
+	 *actions shown on the sketchpad
+	 */
 	private List<Action> shownActions;
-	// actions removed from the sketchpad
+	
+	/**
+	 * actions removed from the sketchpad
+	 */
 	private List<Action> removedActions;
 
-	private Bitmap bmp;
+	/**
+	 * The bitmap to hold last saved painting if saved.
+	 */
+	private Bitmap savedPaintingBitmap;
+	
+	/**
+	 * The file path of the saved painting on SD card.
+	 */
+	private String backgroundFilePath = "";
 	
 	public Sketchpad(Context context) {
 		super(context);
@@ -53,19 +67,10 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		mSurfaceHolder = this.getHolder();
 		mSurfaceHolder.addCallback(this);
 		this.setFocusable(true);
-
 		curBrush = new Brush();
 		curColor = Action.DEFAULT_COLOR;
 	}
 
-//	@Override
-//    protected void onDraw(Canvas canvas) {
-//        super.onDraw(canvas);
-//        Bitmap icon = BitmapFactory.decodeResource(getResources(),R.drawable.sample_painting_02);
-//        canvas.drawColor(Color.BLACK);
-//        canvas.drawBitmap(icon, 10, 10, new Paint());        
-//    }
-	
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		Canvas canvas = mSurfaceHolder.lockCanvas();
@@ -80,19 +85,40 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
-			int height) {
-		if ( isRestorable()) {
+	        int height) {
+	    tryLoadingSavedPaintingBitmap();
+	    tryDrawingSavedPaintingBitmap();
+		if ( isActionsRestorable()) {
 			drawShownActions();
 		}
 	}
 
-    private boolean isRestorable() {
+    private void tryLoadingSavedPaintingBitmap() {
+        if( ! StringUtil.isNullOrEmptyOrWhitespace(backgroundFilePath) ) {
+	        savedPaintingBitmap = BitmapFactory.decodeFile(backgroundFilePath);
+	    }
+    }
+
+    private void tryDrawingSavedPaintingBitmap() {
+        if( savedPaintingBitmap != null ) {
+            Canvas canvas = mSurfaceHolder.lockCanvas();
+            canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+            canvas.drawBitmap(savedPaintingBitmap, 0, 0, new Paint());
+            mSurfaceHolder.unlockCanvasAndPost(canvas);
+        }
+    }
+
+    public boolean isActionsRestorable() {
         return shownActions != null && shownActions.size() > 0;
     }
 
     private void drawShownActions() {
         Canvas canvas = mSurfaceHolder.lockCanvas();
         canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+        if (savedPaintingBitmap != null){
+            canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+        }
+        
         for (Action a : shownActions) {
         	a.draw(canvas);
         }
@@ -101,7 +127,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
-
 	}
 
 	@Override
@@ -124,8 +149,13 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
 	        case MotionEvent.ACTION_MOVE:
 	            Canvas canvas = mSurfaceHolder.lockCanvas();
-	            //To apply every new action, clear the whole canvas and draw all shownActions again.
+	            //To apply every new action, clear the whole canvas,
+	            //then draw the saved painting if not null ,
+	            //and draw all shownActions again.
 	            canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	            if( savedPaintingBitmap != null ) {
+	                canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+                }
 	            for (Action a : shownActions) {
 	                a.draw(canvas);
 	            }
@@ -193,27 +223,27 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	 * @return bitmap contains the screenshot
 	 */
 	public Bitmap getBitmap() {
+	    Bitmap bmp;
 		bmp = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
 		Canvas canvas = new Canvas(bmp);
-		doDraw(canvas);
-		return bmp;
-	}
-
-	public void doDraw(Canvas canvas) {
 		canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+		if( savedPaintingBitmap != null && ! savedPaintingBitmap.isRecycled() ) {
+		    canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+		}
 		for (Action a : shownActions) {
 			a.draw(canvas);
 		}
-		//TODO do we need a new Paint() here ?
+		//TODO do we need a new Paint() here ? It works fine with a null !!
 		canvas.drawBitmap(bmp, 0, 0, null);
+		return bmp;
 	}
-	
+
 	/**
 	 * undo last action
 	 * @return true if undone
 	 */
 	public boolean undo() {
-		if (isRestorable()) {
+		if (isActionsRestorable()) {
 			removedActions.add(shownActions.remove(shownActions.size() - 1));
 			drawShownActions();
 			return true;
@@ -232,5 +262,28 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 			return true;
 		}
 		return false;
+	}
+	
+	public void setSavedPaintingPath(String filepath){
+	    if( ! StringUtil.isNullOrEmptyOrWhitespace(filepath) ) 
+	        backgroundFilePath = filepath;
+	}
+
+	@Override
+	protected void onDraw(Canvas canvas) {
+	    super.onDraw(canvas);
+	}
+	
+	public void clear(){
+	    if( savedPaintingBitmap != null ) {
+	        savedPaintingBitmap.recycle();
+//	        after recycling a bitmap, we need to set it to null also.
+	        savedPaintingBitmap = null;
+        }
+	    shownActions.clear();
+	    removedActions.clear();
+	    Canvas canvas = mSurfaceHolder.lockCanvas();
+	    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	    mSurfaceHolder.unlockCanvasAndPost(canvas);
 	}
 }

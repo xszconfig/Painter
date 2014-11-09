@@ -7,6 +7,8 @@ import java.io.IOException;
 import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -17,7 +19,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.WindowManager;
+import android.view.View.OnLongClickListener;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -36,10 +38,14 @@ import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.ToastUtil;
 
 public class PaintActivity extends Activity implements OnClickListener {
+    private static final String PREFERENCE_FILE_NAME_STRING = "PaintActivity";
+    private static final String KEY_LAST_SAVED_PAINTING_PATH = "KEY_LAST_SAVED_PAINTING_PATH";
 
     private Context mContext;
     private Sketchpad   mSketchpad;
     ToastUtil mToastUtil;
+    SharedPreferences mSharedPreferences;
+    Editor mEditor;
     
     LinearLayout bottomMenuLayout, undoRedoLayout;
     LinearLayout sizeAndAlphaPickerLayout;
@@ -56,14 +62,20 @@ public class PaintActivity extends Activity implements OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        getWindow().setFlags( WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE);
+        // prohibit screenshots
+//        getWindow().setFlags( WindowManager.LayoutParams.FLAG_SECURE,
+//                WindowManager.LayoutParams.FLAG_SECURE);
         
         setContentView(R.layout.painting_activity);
         mContext = PaintActivity.this;
         mToastUtil = new ToastUtil(mContext);
+        mSharedPreferences = mContext.getSharedPreferences(PREFERENCE_FILE_NAME_STRING, Context.MODE_PRIVATE);
+//        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+        mEditor = mSharedPreferences.edit();
 
         mSketchpad = (Sketchpad) findViewById(R.id.sketchpad);
+        //TODO if last painting was saved when exit, it'll restored automatically
+        mSketchpad.setSavedPaintingPath(mSharedPreferences.getString(KEY_LAST_SAVED_PAINTING_PATH, ""));
         mSketchpad.setOnClickListener(this);
 
         findViewById(R.id.color_picker).setOnClickListener(this);
@@ -74,8 +86,22 @@ public class PaintActivity extends Activity implements OnClickListener {
         undoRedoLayout = findView(R.id.undo_redo_layout);
         undo = findView(R.id.undo);
         redo = findView(R.id.redo);
-        undo.setOnClickListener(this);
         redo.setOnClickListener(this);
+        undo.setOnClickListener(this);
+        undo.setOnLongClickListener(new OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                AlertDialogUtil.showDialogWithTwoChoices(mContext, "Clear the whole canvas ?",
+                        "Clear it now !", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                               mSketchpad.clear();
+                            }
+                        },
+                        "Let it stay !", null);
+                return true;
+            }
+        });
         
         setupColorPicker();
         sizeBar = findView(R.id.size_picker);
@@ -211,8 +237,10 @@ public class PaintActivity extends Activity implements OnClickListener {
         String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis())+ ".png";
         File file = new File(directory, filename);
         boolean isSaved = savePicAsPNG(mSketchpad.getBitmap(), file);
-        if( isSaved )
+        if( isSaved ){
             mToastUtil.LongToast("image saved: " + file.getPath());
+            mEditor.putString(KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();
+        }
         else
             mToastUtil.LongToast("fail to save image, checkout SD card");
     }
