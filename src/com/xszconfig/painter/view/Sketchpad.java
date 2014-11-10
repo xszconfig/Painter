@@ -7,11 +7,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.text.StaticLayout;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import com.xszconfig.utils.StringUtil;
 
 /*
@@ -48,6 +53,28 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	 */
 	private String backgroundFilePath = "";
 	
+	/**
+	 *  boolean value to indicate if the canvas is zooming.
+	 */
+	private boolean isZoomed = false;
+
+
+	/**
+	 * Minimum distance to trigger zooming.
+	 */
+	private final float MIN_ZOOM_TRIGGER_DISTANCE = 30.0f;
+	private final float MAX_SCALE = 2.0f;
+	private final float MIN_SCALE = 1.0f;
+	/**
+	 * The zooming scale of current state. 
+	 * It's value vary from 1.0f to 3.0f, which makes the canvas can only zoom in. 
+	 */
+	private float currZoomScale = 1.0f;
+	private Matrix currMatrix ;
+	
+	private float zoomCenterX, zoomCenterY;
+	private float startDistance = 30.0f, currDistance;
+	
 	public Sketchpad(Context context) {
 		super(context);
 		init();
@@ -74,6 +101,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		Canvas canvas = mSurfaceHolder.lockCanvas();
+		if( isZoomed && currMatrix != null) {
+           canvas.setMatrix(currMatrix);
+        }
 		canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
 		mSurfaceHolder.unlockCanvasAndPost(canvas);
 		//shownActions will be auto-restored if not null
@@ -130,62 +160,157 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	@Override
+	public boolean performClick(){
+	    return super.performClick();
+	}
+
+	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 	    int action = event.getAction();
 	    if (action == MotionEvent.ACTION_CANCEL) {
 	        return false;
 	    }
 
-	    final long MAX_CLICK_TIME = 100;
+	    /**
+	     *  Handle single-finger-drawing events here.
+	     */
+	    if( event.getPointerCount() == 1 ){
+	        final long MAX_CLICK_TIME = 100;
+	        float touchX = event.getRawX();
+	        float touchY = event.getRawY();
 
-	    float touchX = event.getRawX();
-	    float touchY = event.getRawY();
+	        switch (action) {
+	            case MotionEvent.ACTION_DOWN:
+	                // every touch event creates a new action
+	                setCurAction(touchX, touchY);
+	                break;
 
-	    switch (action) {
-	        case MotionEvent.ACTION_DOWN:
-	            // every touch event creates a new action
-	            setCurAction(touchX, touchY);
-	            break;
+	            case MotionEvent.ACTION_MOVE:
+	                Canvas canvas = mSurfaceHolder.lockCanvas();
+	                if( isZoomed && currMatrix != null ) {
+	                    //TODO need to seperate zooming mode and norm al mode !!
+                        canvas.setMatrix(currMatrix);
+                    }
+	                
+	                /**To apply every new action, clear the whole canvas,
+	                 * then draw the saved painting if not null ,
+	                 * and draw all shownActions again,
+	                 * and the new action at last.
+	                 */
+	                canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	                if( savedPaintingBitmap != null ) {
+	                    canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+	                }
+	                for (Action a : shownActions) {
+	                    a.draw(canvas);
+	                }
+	                if (curAction != null){
+	                    curAction.move(touchX, touchY);
+	                    curAction.draw(canvas);
+	                }
+	                mSurfaceHolder.unlockCanvasAndPost(canvas);
+	                break;
 
-	        case MotionEvent.ACTION_MOVE:
-	            Canvas canvas = mSurfaceHolder.lockCanvas();
-	            //To apply every new action, clear the whole canvas,
-	            //then draw the saved painting if not null ,
-	            //and draw all shownActions again.
-	            canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
-	            if( savedPaintingBitmap != null ) {
-	                canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-                }
-	            for (Action a : shownActions) {
-	                a.draw(canvas);
-	            }
-	            if (curAction != null){
-	                curAction.move(touchX, touchY);
-	                curAction.draw(canvas);
-	            }
-	            mSurfaceHolder.unlockCanvasAndPost(canvas);
-	            break;
+	            case MotionEvent.ACTION_UP:
+	                long eventTotalTime = event.getEventTime() - event.getDownTime();
+	                //separate Click event and draw event
+	                if( eventTotalTime < MAX_CLICK_TIME ) {
+	                    this.performClick();
+	                    return true;
 
-	        case MotionEvent.ACTION_UP:
-	            long eventTotalTime = event.getEventTime() - event.getDownTime();
-	            //separate Click event and draw event
-	            if( eventTotalTime < MAX_CLICK_TIME ) {
-	                this.performClick();
+	                }else {
+	                    //clear the removed action list everytime draw something new 
+	                    removedActions.clear();
+	                    //add curAction to the end of the list
+	                    shownActions.add(curAction);
+	                    curAction = null;
+	                    return true;
+	                }
+
+	            default:
+	                break;
+	        }
+
+	        /**
+	         *  Handle double-finger-zooming events here.
+	         */
+	    }else if (event.getPointerCount() == 2) {
+	        float x1, y1, x2, y2;
+	        float deltaX, deltaY;
+	        float zoomScale = 1.0f;
+
+
+	        switch (event.getAction() & MotionEvent.ACTION_MASK ) {
+	            case MotionEvent.ACTION_POINTER_DOWN:
+	                x1 = event.getX(0);
+	                y1 = event.getY(0);
+	                x2 = event.getX(1);
+	                y2 = event.getY(1);
+	                deltaX = x1 - x2;
+	                deltaY = y1 - y2;
+	                startDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+	                break;
+
+	            case MotionEvent.ACTION_MOVE:
+	                x1 = event.getX(0);
+	                y1 = event.getY(0);
+	                x2 = event.getX(1);
+	                y2 = event.getY(1);
+	                deltaX = x1 - x2;
+	                deltaY = y1 - y2;
+	                currDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+	                zoomCenterX = (x1 + x2) / 2;
+	                zoomCenterY = (y1 + y2) / 2;
+
+	                if( Math.abs(currDistance - startDistance) >= MIN_ZOOM_TRIGGER_DISTANCE ) {
+	                    zoomScale = currDistance / startDistance ;
+	                    performZoom(zoomCenterX, zoomCenterY, zoomScale);
+	                }
+	                break;
+
+	            case MotionEvent.ACTION_POINTER_UP:
 	                return true;
 
-	            }else {
-	                //clear the removed action list everytime draw something new 
-	                removedActions.clear();
-	                //add curAction to the end of the list
-	                shownActions.add(curAction);
-	                curAction = null;
-	                return true;
-	            }
-
-	        default:
-	            break;
+	            default:
+	                break;
+	        }
 	    }
+
 	    return false;
+	}
+
+	private void performZoom(float pivotX, float pivotY, float scale){
+	    // range check
+	    pivotX = pivotX < 0 ? 0 :pivotX ;
+	    pivotY = pivotY < 0 ? 0 :pivotY ;
+	    zoomCenterX = pivotX;
+	    zoomCenterY = pivotY;
+	    
+	    // The canvas will never be smaller than its original size .
+	    currZoomScale *= scale;
+	    currZoomScale = currZoomScale < MIN_SCALE ? MIN_SCALE : currZoomScale; 
+	    currZoomScale = currZoomScale > MAX_SCALE ? MAX_SCALE : currZoomScale;
+	    isZoomed = (currZoomScale == MIN_SCALE) ? false : true ;
+	    if (isZoomed == false) return;
+	    
+	    Canvas canvas = mSurfaceHolder.lockCanvas();
+	    if( currMatrix == null){
+	        currMatrix = new Matrix();
+	    }
+	    currMatrix.setScale(currZoomScale, currZoomScale, zoomCenterX, zoomCenterY);
+	    // NOTE: Matrix of canvas needs to be set first, before we can drawColor() and drawBitmap() !
+	    canvas.setMatrix(currMatrix);
+	    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	    if( savedPaintingBitmap != null ) 
+	        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+	    for (Action a : shownActions) 
+	        a.draw(canvas);
+	    mSurfaceHolder.unlockCanvasAndPost(canvas);
+	}
+	
+	@Override
+	protected void onDraw(Canvas canvas) {
+	    super.onDraw(canvas);
 	}
 
 	public Brush getBrush() {
@@ -233,7 +358,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 		for (Action a : shownActions) {
 			a.draw(canvas);
 		}
-		//TODO do we need a new Paint() here ? It works fine with a null !!
+		// do we need a new Paint() here ? It works fine with a null !!
 		canvas.drawBitmap(bmp, 0, 0, null);
 		return bmp;
 	}
@@ -269,10 +394,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	        backgroundFilePath = filepath;
 	}
 
-	@Override
-	protected void onDraw(Canvas canvas) {
-	    super.onDraw(canvas);
-	}
 	
 	public void clear(){
 	    if( savedPaintingBitmap != null ) {

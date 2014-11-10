@@ -109,7 +109,6 @@ public class PaintActivity extends Activity implements OnClickListener {
             @Override
             public void onSizeChanged(float size) {
                 mSketchpad.getBrush().setSize(size);
-                Log.e("PaintActivity onSizeChanged()--->", "size: " + mSketchpad.getBrush().getSize());
             }
         });
 
