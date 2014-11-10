@@ -45,6 +45,17 @@ public class Action {
 	   mPath.lineTo(x, y);
 	   
 	}
+	
+	Action(Brush brush, int color, float targetX, float targetY, float pivotX, float pivotY, float scale){
+	   this.mColor = color;
+	   this.mBrush = brush;
+	   mPath = new Path();
+	   targetX = (targetX - pivotX) / scale;
+	   targetY = (targetY - pivotY) / scale;
+	   mPath.moveTo(targetX, targetY);
+	   mPath.lineTo(targetX, targetY);
+	   //TODO not yet done !!
+	}
 
 	public void draw(Canvas canvas){
 	    Paint paint = new Paint();
@@ -61,4 +72,10 @@ public class Action {
 	public void move(float mx, float my){
 		mPath.lineTo(mx, my);
 	};
+	
+	public void moveWhenZoomed(float targetX, float targetY, float pivotX, float pivotY, float scale){
+	    targetX = (targetX - pivotX) / scale;
+	    targetY = (targetY - pivotY) / scale;
+	    mPath.lineTo(targetX, targetY);
+	}
 }

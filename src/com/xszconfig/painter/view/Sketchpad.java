@@ -186,29 +186,44 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	                break;
 
 	            case MotionEvent.ACTION_MOVE:
-	                Canvas canvas = mSurfaceHolder.lockCanvas();
+	                // draw on the zoomed canvas.
 	                if( isZoomed && currMatrix != null ) {
-	                    //TODO need to seperate zooming mode and norm al mode !!
-                        canvas.setMatrix(currMatrix);
-                    }
-	                
-	                /**To apply every new action, clear the whole canvas,
-	                 * then draw the saved painting if not null ,
-	                 * and draw all shownActions again,
-	                 * and the new action at last.
-	                 */
-	                canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
-	                if( savedPaintingBitmap != null ) {
-	                    canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+	                    Canvas canvas = mSurfaceHolder.lockCanvas();
+	                    canvas.setMatrix(currMatrix);
+	                    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	                    if( savedPaintingBitmap != null ) {
+	                        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+	                    }
+	                    for (Action a : shownActions) {
+	                        a.draw(canvas);
+	                    }
+	                    //TODO handle the new action in a different way.
+	                    if (curAction != null){
+	                        curAction.moveWhenZoomed(touchX, touchY, zoomCenterX, zoomCenterY, currZoomScale);
+	                        curAction.draw(canvas);
+	                    }
+	                    mSurfaceHolder.unlockCanvasAndPost(canvas);
+
+	                }else{// draw on the origin canvas.
+	                    Canvas canvas = mSurfaceHolder.lockCanvas();
+	                    /**To apply every new action, clear the whole canvas,
+	                     * then draw the saved painting if not null ,
+	                     * and draw all shownActions again,
+	                     * and the new action at last.
+	                     */
+	                    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	                    if( savedPaintingBitmap != null ) {
+	                        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+	                    }
+	                    for (Action a : shownActions) {
+	                        a.draw(canvas);
+	                    }
+	                    if (curAction != null){
+	                        curAction.move(touchX, touchY);
+	                        curAction.draw(canvas);
+	                    }
+	                    mSurfaceHolder.unlockCanvasAndPost(canvas);
 	                }
-	                for (Action a : shownActions) {
-	                    a.draw(canvas);
-	                }
-	                if (curAction != null){
-	                    curAction.move(touchX, touchY);
-	                    curAction.draw(canvas);
-	                }
-	                mSurfaceHolder.unlockCanvasAndPost(canvas);
 	                break;
 
 	            case MotionEvent.ACTION_UP:
@@ -238,7 +253,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	        float x1, y1, x2, y2;
 	        float deltaX, deltaY;
 	        float zoomScale = 1.0f;
-
 
 	        switch (event.getAction() & MotionEvent.ACTION_MASK ) {
 	            case MotionEvent.ACTION_POINTER_DOWN:
