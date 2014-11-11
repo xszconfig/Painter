@@ -101,9 +101,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		Canvas canvas = mSurfaceHolder.lockCanvas();
-		if( isZoomed && currMatrix != null) {
-           canvas.setMatrix(currMatrix);
-        }
+		if( isZoomed && currMatrix != null) 
+		    canvas.setMatrix(currMatrix);
+		
 		canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
 		mSurfaceHolder.unlockCanvasAndPost(canvas);
 		//shownActions will be auto-restored if not null
@@ -132,6 +132,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     private void tryDrawingSavedPaintingBitmap() {
         if( savedPaintingBitmap != null ) {
             Canvas canvas = mSurfaceHolder.lockCanvas();
+            if( isZoomed && currMatrix != null) 
+                canvas.setMatrix(currMatrix);
+
             canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
             canvas.drawBitmap(savedPaintingBitmap, 0, 0, new Paint());
             mSurfaceHolder.unlockCanvasAndPost(canvas);
@@ -144,6 +147,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     private void drawShownActions() {
         Canvas canvas = mSurfaceHolder.lockCanvas();
+		if( isZoomed && currMatrix != null) 
+		    canvas.setMatrix(currMatrix);
+
         canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
         if (savedPaintingBitmap != null){
             canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
@@ -201,7 +207,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	                    for (Action a : shownActions) {
 	                        a.draw(canvas);
 	                    }
-	                    //TODO handle the new action in a different way.
 	                    if (curAction != null){
 	                        curAction.moveWhenZoomed(touchX, touchY, zoomCenterX, zoomCenterY, currZoomScale);
 	                        curAction.draw(canvas);
@@ -436,6 +441,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	    shownActions.clear();
 	    removedActions.clear();
 	    Canvas canvas = mSurfaceHolder.lockCanvas();
+		if( isZoomed && currMatrix != null) 
+		    canvas.setMatrix(currMatrix);
+
 	    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
 	    mSurfaceHolder.unlockCanvasAndPost(canvas);
 	}
