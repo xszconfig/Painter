@@ -63,17 +63,25 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	 * Minimum distance to trigger zooming.
 	 */
 	private final float MIN_ZOOM_TRIGGER_DISTANCE = 30.0f;
-	private final float MAX_SCALE = 2.0f;
-	private final float MIN_SCALE = 1.0f;
+	/**
+	 *  max and min scales when the user stop zooming.
+	 */
+	private final float MAX_FINAL_SCALE = 2.0f;
+	private final float MIN_FINAL_SCALE = 1.0f;
+	/**
+	 *  max and min scales when user is zooming the canvas.
+	 */
+	private final float MIN_SCALE_WHEN_ZOOMING = 0.25f;
+	private final float MAX_SCALE_WHEN_ZOOMING = 10.0f;
 	/**
 	 * The zooming scale of current state. 
-	 * It's value vary from 1.0f to 3.0f, which makes the canvas can only zoom in. 
 	 */
 	private float currZoomScale = 1.0f;
+	private float lastZoomScale = 1.0f;
 	private Matrix currMatrix ;
 	
 	private float zoomCenterX, zoomCenterY;
-	private float startDistance = 30.0f, currDistance;
+	private float startDistance = 30.0f, currDistance = 30.0f;
 	
 	public Sketchpad(Context context) {
 		super(context);
@@ -261,7 +269,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	    }else if (event.getPointerCount() == 2) {
 	        float x1, y1, x2, y2;
 	        float deltaX, deltaY;
-	        float zoomScale = 1.0f;
 
 	        switch (event.getAction() & MotionEvent.ACTION_MASK ) {
 	            case MotionEvent.ACTION_POINTER_DOWN:
@@ -285,13 +292,42 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	                zoomCenterX = (x1 + x2) / 2;
 	                zoomCenterY = (y1 + y2) / 2;
 
-	                if( Math.abs(currDistance - startDistance) >= MIN_ZOOM_TRIGGER_DISTANCE ) {
-	                    zoomScale = currDistance / startDistance ;
-	                    performZoom(zoomCenterX, zoomCenterY, zoomScale);
-	                }
+//	                if( Math.abs(currDistance - startDistance) >= MIN_ZOOM_TRIGGER_DISTANCE ) {
+	                    currZoomScale = lastZoomScale * (currDistance / startDistance ) ;
+	                    performZoom(zoomCenterX, zoomCenterY);
+//	                }
 	                break;
 
 	            case MotionEvent.ACTION_POINTER_UP:
+	                x1 = event.getX(0);
+	                y1 = event.getY(0);
+	                x2 = event.getX(1);
+	                y2 = event.getY(1);
+	                deltaX = x1 - x2;
+	                deltaY = y1 - y2;
+	                currDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+	                zoomCenterX = (x1 + x2) / 2;
+	                zoomCenterY = (y1 + y2) / 2;
+	                /**
+	                 * zoom out to max scale if the user zoom it in too much
+	                 */
+	                if( currZoomScale > MAX_FINAL_SCALE){
+	                    while( currZoomScale > MAX_FINAL_SCALE){
+	                        currZoomScale -= 0.5;
+	                        performZoom(zoomCenterX, zoomCenterY);
+	                    }
+	                    currZoomScale = currZoomScale < MAX_FINAL_SCALE ? MAX_FINAL_SCALE : currZoomScale;
+	                    performZoom(zoomCenterX, zoomCenterY);
+
+	                }else if( currZoomScale < MIN_FINAL_SCALE){
+	                    while( currZoomScale < MIN_FINAL_SCALE){
+	                        currZoomScale += 0.1;
+	                        performZoom(zoomCenterX, zoomCenterY);
+	                    }
+	                    currZoomScale = currZoomScale > MIN_FINAL_SCALE ? MIN_FINAL_SCALE : currZoomScale;
+	                    performZoom(zoomCenterX, zoomCenterY);
+	                }
+	                lastZoomScale = currZoomScale;
 	                return true;
 
 	            default:
@@ -302,19 +338,18 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	    return false;
 	}
 
-	private void performZoom(float pivotX, float pivotY, float scale){
+	private void performZoom(float pivotX, float pivotY){
 	    // range check
 	    pivotX = pivotX < 0 ? 0 :pivotX ;
 	    pivotY = pivotY < 0 ? 0 :pivotY ;
 	    zoomCenterX = pivotX;
 	    zoomCenterY = pivotY;
 	    
-	    // The canvas will never be smaller than its original size .
-	    currZoomScale *= scale;
-	    currZoomScale = currZoomScale < MIN_SCALE ? MIN_SCALE : currZoomScale; 
-	    currZoomScale = currZoomScale > MAX_SCALE ? MAX_SCALE : currZoomScale;
-	    isZoomed = (currZoomScale == MIN_SCALE) ? false : true ;
-	    if (isZoomed == false) return;
+	    
+	    currZoomScale = currZoomScale < MIN_SCALE_WHEN_ZOOMING ? MIN_SCALE_WHEN_ZOOMING : currZoomScale; 
+	    currZoomScale = currZoomScale > MAX_SCALE_WHEN_ZOOMING ? MAX_SCALE_WHEN_ZOOMING : currZoomScale;
+	    isZoomed = (currZoomScale == MIN_FINAL_SCALE) ? false : true ;
+//	    if (isZoomed == false) return;
 	    
 	    Canvas canvas = mSurfaceHolder.lockCanvas();
 	    if( currMatrix == null){
