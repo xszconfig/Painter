@@ -182,7 +182,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	        switch (action) {
 	            case MotionEvent.ACTION_DOWN:
 	                // every touch event creates a new action
-	                setCurAction(touchX, touchY);
+	                if( isZoomed && currMatrix != null ) {
+	                    setCurActionWhenZoomed(touchX, touchY, zoomCenterX, zoomCenterY, currZoomScale);
+	                }else{
+	                    setCurAction(touchX, touchY);
+	                }
 	                break;
 
 	            case MotionEvent.ACTION_MOVE:
@@ -355,6 +359,20 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
         }
         
 	    curAction = new Action(newBrush, newColor, x, y);
+	}
+
+	public void setCurActionWhenZoomed(float targetX, float targetY, float pivotX, float pivotY, float scale) {
+	    Brush newBrush = new Brush();
+	    if( curBrush != null ){ 
+           newBrush.setSize(curBrush.getSize());
+	    }
+         
+	    int newColor = Action.DEFAULT_COLOR;
+        if( curColor != Action.DEFAULT_COLOR){
+            newColor = curColor;
+        }
+        
+	    curAction = new Action(newBrush, newColor, targetX, targetY, pivotX, pivotY, scale);
 	}
 
 	/**

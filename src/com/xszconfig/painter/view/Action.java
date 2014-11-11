@@ -46,15 +46,51 @@ public class Action {
 	   
 	}
 	
+	/**
+	 *  Instantiation of a new Action for a zoomed canvas.
+	 *  The idea here is to scale down the new line and let it be scale up by the canvas later.
+	 *  The calculation down here is all about working out the "scale-down-coordinate". 
+	 * @param brush
+	 * @param color
+	 * @param targetX
+	 * @param targetY
+	 * @param pivotX
+	 * @param pivotY
+	 * @param scale
+	 * 
+	 * @return A Action for zoomed canvas.
+	 */
 	Action(Brush brush, int color, float targetX, float targetY, float pivotX, float pivotY, float scale){
-	   this.mColor = color;
-	   this.mBrush = brush;
-	   mPath = new Path();
-	   targetX = (targetX - pivotX) / scale;
-	   targetY = (targetY - pivotY) / scale;
-	   mPath.moveTo(targetX, targetY);
-	   mPath.lineTo(targetX, targetY);
-	   //TODO not yet done !!
+	    this.mColor = color;
+	    this.mBrush = brush;
+	    mPath = new Path();
+
+	    float newTargetX = targetX, newTargetY = targetY;
+	    // When the slope the virtual line exists and is not 0.
+	    if( targetX != pivotX && targetY != pivotY) {
+	        float constant1 = ((1/scale)*(1/scale)) * (((targetX-pivotX)*(targetX-pivotX)) + ((targetY-pivotY)*(targetY-pivotY)));
+	        float slopeOfLine = (targetY-pivotY) / (targetX - pivotX);
+	        float power2ofSlope = slopeOfLine * slopeOfLine;
+
+	        float newTargetX1 = (float) (pivotX + Math.sqrt(constant1 / (power2ofSlope + 1)));
+	        float newTargetX2 = (float) (pivotX - Math.sqrt(constant1 / (power2ofSlope + 1)));
+	        newTargetX = (targetX - pivotX) > 0 ? newTargetX1 : newTargetX2 ;
+
+	        float newTargetY1 = (float) (pivotY + Math.sqrt((constant1 * power2ofSlope) / (power2ofSlope + 1)));
+	        float newTargetY2 = (float) (pivotY - Math.sqrt((constant1 * power2ofSlope) / (power2ofSlope + 1)));
+	        newTargetY = (targetY - pivotY) > 0 ? newTargetY1 : newTargetY2 ;
+
+	        // When the slope of the virtual line does not exist, which means targetX == pivotX
+	    }else if( targetX == pivotX){
+	        newTargetY = pivotY + ((targetY - pivotY) / scale );
+
+	        // When the slope is 0.
+	    }else if (targetY == pivotY) {
+	        newTargetX = pivotX + ((targetX - pivotX) / scale );
+
+	    }
+	    mPath.moveTo(newTargetX, newTargetY);
+	    mPath.lineTo(newTargetX, newTargetY);
 	}
 
 	public void draw(Canvas canvas){
@@ -74,8 +110,30 @@ public class Action {
 	};
 	
 	public void moveWhenZoomed(float targetX, float targetY, float pivotX, float pivotY, float scale){
-	    targetX = (targetX - pivotX) / scale;
-	    targetY = (targetY - pivotY) / scale;
-	    mPath.lineTo(targetX, targetY);
+	    float newTargetX = targetX, newTargetY = targetY;
+	    // When the slope the virtual line exists and is not 0.
+	    if( targetX != pivotX && targetY != pivotY) {
+	        float constant1 = ((1/scale)*(1/scale)) * (((targetX-pivotX)*(targetX-pivotX)) + ((targetY-pivotY)*(targetY-pivotY)));
+	        float slopeOfLine = (targetY-pivotY) / (targetX - pivotX);
+	        float power2ofSlope = slopeOfLine * slopeOfLine;
+
+	        float newTargetX1 = (float) (pivotX + Math.sqrt(constant1 / (power2ofSlope + 1)));
+	        float newTargetX2 = (float) (pivotX - Math.sqrt(constant1 / (power2ofSlope + 1)));
+	        newTargetX = (targetX - pivotX) > 0 ? newTargetX1 : newTargetX2 ;
+
+	        float newTargetY1 = (float) (pivotY + Math.sqrt((constant1 * power2ofSlope) / (power2ofSlope + 1)));
+	        float newTargetY2 = (float) (pivotY - Math.sqrt((constant1 * power2ofSlope) / (power2ofSlope + 1)));
+	        newTargetY = (targetY - pivotY) > 0 ? newTargetY1 : newTargetY2 ;
+
+	        // When the slope of the virtual line does not exist, which means targetX == pivotX
+	    }else if( targetX == pivotX){
+	        newTargetY = pivotY + ((targetY - pivotY) / scale );
+
+	        // When the slope is 0.
+	    }else if (targetY == pivotY) {
+	        newTargetX = pivotX + ((targetX - pivotX) / scale );
+	    }
+
+	    mPath.lineTo(newTargetX, newTargetY);
 	}
 }
