@@ -13,7 +13,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -32,6 +31,7 @@ import com.larswerkman.holocolorpicker.ValueBar;
 import com.larswerkman.holocolorpicker.ValueBar.OnValueChangedListener;
 import com.xszconfig.painter.view.BrushSizeBar;
 import com.xszconfig.painter.view.BrushSizeBar.OnSizeChangedListener;
+import com.xszconfig.painter.view.ColorPickerMenuView;
 import com.xszconfig.painter.view.Sketchpad;
 import com.xszconfig.utils.AlertDialogUtil;
 import com.xszconfig.utils.DateUtil;
@@ -57,6 +57,8 @@ public class PaintActivity extends Activity implements OnClickListener {
     private SaturationBar saturationBar;
     private ValueBar valueBar;
     private BrushSizeBar sizeBar;
+    
+    ColorPickerMenuView colorPickerMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,8 +80,9 @@ public class PaintActivity extends Activity implements OnClickListener {
         mSketchpad.setSavedPaintingPath(mSharedPreferences.getString(KEY_LAST_SAVED_PAINTING_PATH, ""));
         mSketchpad.setOnClickListener(this);
 
-        findViewById(R.id.color_picker).setOnClickListener(this);
-        findViewById(R.id.eraser_picker).setOnClickListener(this);
+        colorPickerMenu = findView(R.id.color_picker);
+        colorPickerMenu.setOnClickListener(this);
+        findViewById(R.id.eraser).setOnClickListener(this);
        
         bottomMenuLayout = findView(R.id.bottom_meun_layout);
         sizeAndAlphaPickerLayout = findView(R.id.bar_picker_layout);
@@ -114,6 +117,10 @@ public class PaintActivity extends Activity implements OnClickListener {
 
         mSketchpad.setColor(picker.getColor());
         mSketchpad.getBrush().addBrushSizeBar(sizeBar);
+        
+        colorPickerMenu.setColor(picker.getColor());
+        
+        
     }
 
     private void setupColorPicker() {
@@ -128,12 +135,13 @@ public class PaintActivity extends Activity implements OnClickListener {
         picker.addValueBar(valueBar);
 
 //      color picker init with color black.
-//        picker.setColor(Action.DEFAULT_COLOR);
+//      picker.setColor(Action.DEFAULT_COLOR);
         
         picker.setOnColorChangedListener(new OnColorChangedListener() {
             @Override
             public void onColorChanged(int color) {
                 mSketchpad.setColor(color);
+                colorPickerMenu.setColor(color);
             }
         });
 
@@ -178,7 +186,7 @@ public class PaintActivity extends Activity implements OnClickListener {
                 toggleVisibility(colorPickerLayout);
                 break;
                 
-            case R.id.eraser_picker:
+            case R.id.eraser:
                 mSketchpad.setColor(Color.WHITE);
                 break;
                 
@@ -235,7 +243,7 @@ public class PaintActivity extends Activity implements OnClickListener {
         String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_PATH;
         String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis())+ ".png";
         File file = new File(directory, filename);
-        boolean isSaved = savePicAsPNG(mSketchpad.getBitmap(), file);
+        boolean isSaved = savePicAsPNG(mSketchpad.getScreenshotBitmap(), file);
         if( isSaved ){
             mToastUtil.LongToast("image saved: " + file.getPath());
             mEditor.putString(KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();

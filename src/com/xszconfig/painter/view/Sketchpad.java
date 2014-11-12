@@ -266,41 +266,22 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	        /**
 	         *  Handle double-finger-zooming events here.
 	         */
-	    }else if (event.getPointerCount() == 2) {
-	        float x1, y1, x2, y2;
-	        float deltaX, deltaY;
-
-	        switch (event.getAction() & MotionEvent.ACTION_MASK ) {
-	            case MotionEvent.ACTION_POINTER_DOWN:
-	                x1 = event.getX(0);
-	                y1 = event.getY(0);
-	                x2 = event.getX(1);
-	                y2 = event.getY(1);
-	                deltaX = x1 - x2;
-	                deltaY = y1 - y2;
-	                startDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-	                break;
-
-	            case MotionEvent.ACTION_MOVE:
-	                x1 = event.getX(0);
-	                y1 = event.getY(0);
-	                x2 = event.getX(1);
-	                y2 = event.getY(1);
-	                deltaX = x1 - x2;
-	                deltaY = y1 - y2;
-	                currDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-	                zoomCenterX = (x1 + x2) / 2;
-	                zoomCenterY = (y1 + y2) / 2;
-
-	                //TODO not yet done here !
-//	                if( Math.abs(currDistance - startDistance) >= MIN_ZOOM_TRIGGER_DISTANCE ) {
-//	                    currZoomScale = lastZoomScale * (currDistance / startDistance ) ;
-	                    currZoomScale = (currDistance / startDistance );
-	                    performZoom();
-//	                }
-	                break;
-
-	            case MotionEvent.ACTION_POINTER_UP:
+//	    }else if (event.getPointerCount() == 2) {
+//	        float x1, y1, x2, y2;
+//	        float deltaX, deltaY;
+//
+//	        switch (event.getAction() & MotionEvent.ACTION_MASK ) {
+//	            case MotionEvent.ACTION_POINTER_DOWN:
+//	                x1 = event.getX(0);
+//	                y1 = event.getY(0);
+//	                x2 = event.getX(1);
+//	                y2 = event.getY(1);
+//	                deltaX = x1 - x2;
+//	                deltaY = y1 - y2;
+//	                startDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+//	                break;
+//
+//	            case MotionEvent.ACTION_MOVE:
 //	                x1 = event.getX(0);
 //	                y1 = event.getY(0);
 //	                x2 = event.getX(1);
@@ -310,36 +291,55 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 //	                currDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 //	                zoomCenterX = (x1 + x2) / 2;
 //	                zoomCenterY = (y1 + y2) / 2;
-//	                /**
-//	                 * zoom out to max final scale if the user zoom it in too much
-//	                 */
-//	                if( currZoomScale > MAX_FINAL_SCALE){
-//	                    float tmp = Math.abs(currZoomScale - MAX_FINAL_SCALE) / 10 ;
-//	                    while( currZoomScale > MAX_FINAL_SCALE){
-//	                        currZoomScale -= tmp;
-//	                        performZoom();
-//	                    }
-//	                    currZoomScale = currZoomScale < MAX_FINAL_SCALE ? MAX_FINAL_SCALE : currZoomScale;
-//	                    performZoom();
 //
-//	                /**
-//	                 * zoom in to min final scale if the user zoom it out too much
-//	                 */
-//	                }else if( currZoomScale < MIN_FINAL_SCALE){
-//	                    float tmp = Math.abs(currZoomScale - MIN_FINAL_SCALE) / 10 ;
-//	                    while( currZoomScale < MIN_FINAL_SCALE){
-//	                        currZoomScale += tmp;
-//	                        performZoom();
-//	                    }
-//	                    currZoomScale = currZoomScale > MIN_FINAL_SCALE ? MIN_FINAL_SCALE : currZoomScale;
+//	                //TODO not yet done here !
+////	                if( Math.abs(currDistance - startDistance) >= MIN_ZOOM_TRIGGER_DISTANCE ) {
+////	                    currZoomScale = lastZoomScale * (currDistance / startDistance ) ;
+//	                    currZoomScale = (currDistance / startDistance );
 //	                    performZoom();
-//	                }
-//	                lastZoomScale = currZoomScale;
-	                return true;
-
-	            default:
-	                break;
-	        }
+////	                }
+//	                break;
+//
+//	            case MotionEvent.ACTION_POINTER_UP:
+////	                x1 = event.getX(0);
+////	                y1 = event.getY(0);
+////	                x2 = event.getX(1);
+////	                y2 = event.getY(1);
+////	                deltaX = x1 - x2;
+////	                deltaY = y1 - y2;
+////	                currDistance = (float)Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+////	                zoomCenterX = (x1 + x2) / 2;
+////	                zoomCenterY = (y1 + y2) / 2;
+////	                /**
+////	                 * zoom out to max final scale if the user zoom it in too much
+////	                 */
+////	                if( currZoomScale > MAX_FINAL_SCALE){
+////	                    float tmp = Math.abs(currZoomScale - MAX_FINAL_SCALE) / 10 ;
+////	                    while( currZoomScale > MAX_FINAL_SCALE){
+////	                        currZoomScale -= tmp;
+////	                        performZoom();
+////	                    }
+////	                    currZoomScale = currZoomScale < MAX_FINAL_SCALE ? MAX_FINAL_SCALE : currZoomScale;
+////	                    performZoom();
+////
+////	                /**
+////	                 * zoom in to min final scale if the user zoom it out too much
+////	                 */
+////	                }else if( currZoomScale < MIN_FINAL_SCALE){
+////	                    float tmp = Math.abs(currZoomScale - MIN_FINAL_SCALE) / 10 ;
+////	                    while( currZoomScale < MIN_FINAL_SCALE){
+////	                        currZoomScale += tmp;
+////	                        performZoom();
+////	                    }
+////	                    currZoomScale = currZoomScale > MIN_FINAL_SCALE ? MIN_FINAL_SCALE : currZoomScale;
+////	                    performZoom();
+////	                }
+////	                lastZoomScale = currZoomScale;
+//	                return true;
+//
+//	            default:
+//	                break;
+//	        }
 	    }
 
 	    return false;
@@ -423,7 +423,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	 * get screenshot of the sketchpad
 	 * @return bitmap contains the screenshot
 	 */
-	public Bitmap getBitmap() {
+	public Bitmap getScreenshotBitmap() {
 	    Bitmap bmp;
 		bmp = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
 		Canvas canvas = new Canvas(bmp);
