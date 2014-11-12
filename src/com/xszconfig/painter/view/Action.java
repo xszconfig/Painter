@@ -21,9 +21,9 @@ public class Action {
     //balck is the default color when not set.
     public static final int DEFAULT_COLOR = Color.BLACK;
 	
-	private Brush mBrush;
-	private int mColor;
-	private Path mPath;
+	protected Brush mBrush;
+	protected int mColor;
+	protected Path mPath;
 
 	Action() {
 	    this.mBrush = new Brush();

@@ -110,8 +110,9 @@
     <RelativeLayout
         android:id="@+id/color_picker_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="200dp"
         android:visibility="gone"
+        android:background="@drawable/popup_background"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="48dp" >
 
@@ -131,7 +132,7 @@
             android:layout_height="wrap_content"
             android:layout_alignBottom="@id/ring_picker"
             android:layout_alignParentRight="true"
-            android:layout_marginRight="5dp"
+            android:layout_marginRight="15dp"
             android:paddingRight="5dp"
             android:layout_marginBottom="40dp"
             android:background="@drawable/bar_background"
@@ -146,9 +147,9 @@
             android:layout_alignLeft="@id/valuebar"
             android:layout_alignParentRight="true"
             android:layout_alignTop="@id/ring_picker"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="50dp"
             android:background="@drawable/bar_background"
-            android:layout_marginRight="5dp"/>
+            android:layout_marginRight="15dp"/>
 
         <!-- SVBar = SaturationBar + ValueBar -->
         <!-- <com.larswerkman.holocolorpicker.SVBar -->

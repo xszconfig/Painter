@@ -43,22 +43,24 @@ public class PaintActivity extends Activity implements OnClickListener {
 
     private Context mContext;
     private Sketchpad   mSketchpad;
-    ToastUtil mToastUtil;
-    SharedPreferences mSharedPreferences;
-    Editor mEditor;
+    private ToastUtil mToastUtil;
+    private SharedPreferences mSharedPreferences;
+    private Editor mEditor;
     
-    LinearLayout bottomMenuLayout, undoRedoLayout;
-    LinearLayout sizeAndAlphaPickerLayout;
-    ImageView undo, redo;
+    private LinearLayout bottomMenuLayout, undoRedoLayout;
+    private LinearLayout sizeAndAlphaPickerLayout;
+    private ImageView undo, redo;
 
-    RelativeLayout colorPickerLayout;
+    private RelativeLayout colorPickerLayout;
     private ColorPicker picker;
     private OpacityBar opacityBar;
     private SaturationBar saturationBar;
     private ValueBar valueBar;
     private BrushSizeBar sizeBar;
     
-    ColorPickerMenuView colorPickerMenu;
+    private ColorPickerMenuView colorPickerMenu;
+    private ImageView scissorsMenu;
+    private ImageView eraserMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +84,10 @@ public class PaintActivity extends Activity implements OnClickListener {
 
         colorPickerMenu = findView(R.id.color_picker);
         colorPickerMenu.setOnClickListener(this);
-        findViewById(R.id.eraser).setOnClickListener(this);
+        eraserMenu = findView(R.id.eraser);
+        eraserMenu.setOnClickListener(this);
+        scissorsMenu = findView(R.id.scissors);
+        scissorsMenu.setOnClickListener(this);
        
         bottomMenuLayout = findView(R.id.bottom_meun_layout);
         sizeAndAlphaPickerLayout = findView(R.id.bar_picker_layout);
@@ -107,13 +112,7 @@ public class PaintActivity extends Activity implements OnClickListener {
         });
         
         setupColorPicker();
-        sizeBar = findView(R.id.size_picker);
-        sizeBar.setOnSizeChangedListener(new OnSizeChangedListener() {
-            @Override
-            public void onSizeChanged(float size) {
-                mSketchpad.getBrush().setSize(size);
-            }
-        });
+        setupSizeBar();
 
         mSketchpad.setColor(picker.getColor());
         mSketchpad.getBrush().addBrushSizeBar(sizeBar);
@@ -121,6 +120,16 @@ public class PaintActivity extends Activity implements OnClickListener {
         colorPickerMenu.setColor(picker.getColor());
         
         
+    }
+
+    private void setupSizeBar() {
+        sizeBar = findView(R.id.size_picker);
+        sizeBar.setOnSizeChangedListener(new OnSizeChangedListener() {
+            @Override
+            public void onSizeChanged(float size) {
+                mSketchpad.getBrush().setSize(size);
+            }
+        });
     }
 
     private void setupColorPicker() {
@@ -201,6 +210,10 @@ public class PaintActivity extends Activity implements OnClickListener {
 
             case R.id.undo:
                 mSketchpad.undo();
+                break;
+                
+            case R.id.scissors:
+                mSketchpad.toggleScissorsMode();
                 break;
 
             default:

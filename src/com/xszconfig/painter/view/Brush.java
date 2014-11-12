@@ -3,8 +3,8 @@ package com.xszconfig.painter.view;
 
 public class Brush {
     public static final float DEFAULT_SIZE = 10.0f;
-    BrushType mBrushType;
-    float size;
+    private BrushType mBrushType;
+    private float size;
     
     private BrushSizeBar mBrushSizeBar;
     

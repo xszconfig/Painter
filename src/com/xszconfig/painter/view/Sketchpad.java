@@ -198,14 +198,39 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	                // every touch event creates a new action
 	                if( isZoomed && currMatrix != null ) {
 	                    setCurActionWhenZoomed(touchX, touchY, zoomCenterX, zoomCenterY, currZoomScale);
+
+	                }else if(isCropMode){
+	                    curAction = new CropAction(touchX, touchY);
+	                    
 	                }else{
 	                    setCurAction(touchX, touchY);
 	                }
 	                break;
 
 	            case MotionEvent.ACTION_MOVE:
+	                if( isCropMode ) {
+                       Canvas canvas = mSurfaceHolder.lockCanvas();
+	                    /**To apply every new action, clear the whole canvas,
+	                     * then draw the saved painting if not null ,
+	                     * and draw all shownActions again,
+	                     * and the new action at last.
+	                     */
+	                    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+	                    if( savedPaintingBitmap != null ) {
+	                        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+	                    }
+	                    for (Action a : shownActions) {
+	                        a.draw(canvas);
+	                    }
+	                    if (curAction != null){
+	                        curAction.move(touchX, touchY);
+	                        curAction.draw(canvas);
+	                    }
+	                    mSurfaceHolder.unlockCanvasAndPost(canvas); 
+                    }
+
 	                // draw on the zoomed canvas.
-	                if( isZoomed && currMatrix != null ) {
+	                else if( isZoomed && currMatrix != null ) {
 	                    Canvas canvas = mSurfaceHolder.lockCanvas();
 	                    canvas.setMatrix(currMatrix);
 	                    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
@@ -345,30 +370,30 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	    return false;
 	}
 
-	private void performZoom(){
-	    
-	    currZoomScale = currZoomScale < MIN_SCALE_WHEN_ZOOMING ? MIN_SCALE_WHEN_ZOOMING : currZoomScale; 
-	    currZoomScale = currZoomScale > MAX_SCALE_WHEN_ZOOMING ? MAX_SCALE_WHEN_ZOOMING : currZoomScale;
-	    isZoomed = (currZoomScale == MIN_FINAL_SCALE) ? false : true ;
-	    
-	    Canvas canvas = mSurfaceHolder.lockCanvas();
-//	    if( currMatrix == null){
-	        currMatrix = new Matrix();
-//	    }
-
-	        //TODO not yet done here !
-	        //水平不够啊不懂啊！！Q_Q
-	    currMatrix.postScale(currZoomScale, currZoomScale, zoomCenterX, zoomCenterY);
-
-	    // NOTE: Matrix of canvas needs to be set first, before we can drawColor() and drawBitmap() !
-	    canvas.setMatrix(currMatrix);
-	    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
-	    if( savedPaintingBitmap != null ) 
-	        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-	    for (Action a : shownActions) 
-	        a.draw(canvas);
-	    mSurfaceHolder.unlockCanvasAndPost(canvas);
-	}
+//	private void performZoom(){
+//	    
+//	    currZoomScale = currZoomScale < MIN_SCALE_WHEN_ZOOMING ? MIN_SCALE_WHEN_ZOOMING : currZoomScale; 
+//	    currZoomScale = currZoomScale > MAX_SCALE_WHEN_ZOOMING ? MAX_SCALE_WHEN_ZOOMING : currZoomScale;
+//	    isZoomed = (currZoomScale == MIN_FINAL_SCALE) ? false : true ;
+//	    
+//	    Canvas canvas = mSurfaceHolder.lockCanvas();
+////	    if( currMatrix == null){
+//	        currMatrix = new Matrix();
+////	    }
+//
+//	        //TODO not yet done here !
+//	        //水平不够啊不懂啊！！Q_Q
+//	    currMatrix.postScale(currZoomScale, currZoomScale, zoomCenterX, zoomCenterY);
+//
+//	    // NOTE: Matrix of canvas needs to be set first, before we can drawColor() and drawBitmap() !
+//	    canvas.setMatrix(currMatrix);
+//	    canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
+//	    if( savedPaintingBitmap != null ) 
+//	        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+//	    for (Action a : shownActions) 
+//	        a.draw(canvas);
+//	    mSurfaceHolder.unlockCanvasAndPost(canvas);
+//	}
 	
 	@Override
 	protected void onDraw(Canvas canvas) {
@@ -470,6 +495,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	        backgroundFilePath = filepath;
 	}
 
+	private boolean isCropMode = false;
+	public void toggleScissorsMode(){
+	    isCropMode = (isCropMode == true) ? false : true;
+	    
+	}
 	
 	public void clear(){
 	    if( savedPaintingBitmap != null ) {
