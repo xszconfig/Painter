@@ -300,6 +300,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 	                } else if (isCropMode && !isCanvasCropped) {
 	                	/**
 	                	 * TODO this part is tough ! no idea how to do it ! 2 days gone Q_Q
+	                	 * I need help !!
 	                	 */
 	                	
 	                	cropPath = curAction.getPath();
