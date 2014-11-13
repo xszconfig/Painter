@@ -93,6 +93,18 @@ public class Action {
 	    mPath.lineTo(newTargetX, newTargetY);
 	}
 
+	public Path getPath(){
+		return mPath;
+	}
+	
+	public int getColor(){
+		return mColor;
+	}
+	
+	public Brush getBrush(){
+		return mBrush;
+	}
+	
 	public void draw(Canvas canvas){
 	    Paint paint = new Paint();
 	    paint.setAntiAlias(true);//反锯齿效果
