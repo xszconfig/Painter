@@ -40,14 +40,14 @@ import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.ToastUtil;
 
 public class PaintActivity extends Activity implements OnClickListener {
-    private static final String PREFERENCE_FILE_NAME_STRING = "PaintActivity";
-    private static final String KEY_LAST_SAVED_PAINTING_PATH = "KEY_LAST_SAVED_PAINTING_PATH";
+    public static final String PREFERENCE_FILE_NAME_STRING = "PaintActivity";
+    public static final String KEY_LAST_SAVED_PAINTING_PATH = "KEY_LAST_SAVED_PAINTING_PATH";
 
     private Context mContext;
     private Sketchpad   mSketchpad;
     private ToastUtil mToastUtil;
     private SharedPreferences mSharedPreferences;
-    private Editor mEditor;
+    public static Editor mEditor;
     
     private LinearLayout bottomMenuLayout, undoRedoLayout;
     private LinearLayout sizeAndAlphaPickerLayout;

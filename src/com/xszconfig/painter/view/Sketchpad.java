@@ -1,5 +1,6 @@
 package com.xszconfig.painter.view;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,11 +15,14 @@ import android.graphics.Path;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.os.Environment;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.xszconfig.painter.PaintActivity;
+import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.StringUtil;
 
 /*
@@ -274,24 +278,47 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
                     case MotionEvent.ACTION_UP:
                         // Single click on the cropped area to stop it from being dragging around.
                         long eventTotalTime = event.getEventTime() - event.getDownTime();
-                        if (eventTotalTime < MAX_CLICK_TIME) {
-                            //TODO draw the final result , clear the cropping path
-                            //TODO and save middle values for later undos & redos
+                        if (isFingerTouchingCroppedArea && eventTotalTime < MAX_CLICK_TIME) {
+                            // draw the final result , clear the cropping path
+                            Bitmap resultBitmap = createEmptyBitmap();
+                            Canvas resultCanvas = new Canvas(resultBitmap);
+                            resultCanvas.drawBitmap(leftBitmap,0,0,null);
+                            resultCanvas.drawBitmap(croppedBitmap, croppedBitmapDeltaX, croppedBitmapDeltaY, null);
+
+                            Canvas moveCanvas = mSurfaceHolder.lockCanvas();
+                            moveCanvas.drawBitmap(resultBitmap, 0, 0, null);
+                            mSurfaceHolder.unlockCanvasAndPost(moveCanvas);
+
+                            //TODO auto-save the crop result for now, so undo is not available.
+                            // undo & redo support will be added later, which is complex.
+                            String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Painter/";
+                            String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis())+ "_cropped.png";
+                            File file = new File(directory, filename);
+                            boolean isSaved = PaintActivity.savePicAsPNG(resultBitmap, file);
+                            if(isSaved)
+                                PaintActivity.mEditor.putString(PaintActivity.KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();
+                            savedPaintingBitmap = resultBitmap;
+                            savedFilePath = file.getPath();
+                            removedActions.clear();
+                            shownActions.clear();
+                            //TODO auto-save the crop result for now, so undo is not available.
 
                             // Clear values in crop mode.
+                            isCropMode = false;
                             isCroppedAreaMovingDone = true ;
                             isCanvasCropped = false;
                             isFingerTouchingCroppedArea = false;
                             cropPath = null;
                             boundPathWhenMoving = null;
                             boundsOfCropPath.setEmpty();
-                            boundsOfCropPath = null;
                             leftBitmap.recycle();
                             leftBitmap = null;
                             croppedBitmap.recycle();
                             croppedBitmap = null;
                             croppedBitmapDeltaX = 0;
                             croppedBitmapDeltaY = 0;
+                            lastCroppedBitmapDeltaX = 0;
+                            lastCroppedBitmapDeltaY = 0;
                             downX = 0;
                             downY = 0;
                             return true;
@@ -323,7 +350,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
                                     bitmapBeforeCrop, (int) left, (int) top,
                                     (int) Math.abs(left - right),
                                     (int) Math.abs(top - bottom));
-                            croppedBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+                            croppedBitmap = createEmptyBitmap();
                             Canvas canvastmp = new Canvas(croppedBitmap);
                             if (croppedRect != null && !croppedRect.isRecycled()) {
                                 canvastmp.drawBitmap(croppedRect, left, top, null);
@@ -337,7 +364,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
                             canvastmp.drawColor(0, Mode.CLEAR);
                             // by now, croppedBitmap is the result of the irregular crop, for later use.
 
-                            leftBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+                            leftBitmap = createEmptyBitmap();
                             Canvas canvastmp2 = new Canvas(leftBitmap);
                             if (bitmapBeforeCrop != null && !bitmapBeforeCrop.isRecycled())
                                 canvastmp2.drawBitmap(bitmapBeforeCrop, 0, 0, null);
@@ -614,8 +641,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
      * @return bitmap contains the screenshot
      */
     public Bitmap getScreenshotBitmap() {
-        Bitmap bmp;
-        bmp = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap bmp = createEmptyBitmap();
         Canvas canvas = new Canvas(bmp);
         canvas.drawColor(COLOR_BACKGROUND_DEFAULT);
         if( savedPaintingBitmap != null && ! savedPaintingBitmap.isRecycled() ) {
@@ -624,10 +650,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
         for (Action a : shownActions) {
             a.draw(canvas);
         }
-        // do we need a new Paint() here ? It works fine with a null !!
-        // TODO it seems fine if we comment the following line, it is useless.
-//		canvas.drawBitmap(bmp, 0, 0, null);
         return bmp;
+    }
+
+    private Bitmap createEmptyBitmap() {
+        return Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
     }
 
     /**
@@ -671,9 +698,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     private boolean isCroppedAreaMovingDone = false;
     private Path cropPath;
     private Path boundPathWhenMoving;
-    RectF boundsOfCropPath = new RectF();
-    Bitmap croppedBitmap ;
-    Bitmap leftBitmap ;
+    private RectF boundsOfCropPath = new RectF();
+    private Bitmap croppedBitmap ;
+    private Bitmap leftBitmap ;
     private float croppedBitmapDeltaX = 0f;
     private float croppedBitmapDeltaY = 0f;
     private float lastCroppedBitmapDeltaX = 0f;
