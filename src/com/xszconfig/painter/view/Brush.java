@@ -1,52 +1,52 @@
 package com.xszconfig.painter.view;
 
-
 public class Brush {
-    public static final float DEFAULT_SIZE = 10.0f;
-    private BrushType mBrushType;
-    private float size;
-    
-    private BrushSizeBar mBrushSizeBar;
-    
-    public Brush() {
-        this.mBrushType = BrushType.Pencil;
-        this.size = DEFAULT_SIZE;
-    }
-    
-    public Brush(BrushType mBrushType, float size){
-        this.mBrushType = mBrushType;
-        this.size = size;
-    }
+  public static final float DEFAULT_SIZE = 10.0f;
+  private BrushType mBrushType;
+  private float size;
 
-    public void addBrushSizeBar(BrushSizeBar brushSizeBar){
-        mBrushSizeBar = brushSizeBar;
-        mBrushSizeBar.setBrush(this);
-        mBrushSizeBar.setSize(getSize());
-    }
-    public BrushType getBrushType() {
-        return mBrushType;
-    }
+  private BrushSizeBar mBrushSizeBar;
 
-    public void setBrushType(BrushType mBrushType) {
-        this.mBrushType = mBrushType;
-    }
+  public Brush() {
+    this.mBrushType = BrushType.Pencil;
+    this.size = DEFAULT_SIZE;
+  }
 
-    public float getSize() {
-        return size;
-    }
+  public Brush(BrushType mBrushType, float size) {
+    this.mBrushType = mBrushType;
+    this.size = size;
+  }
 
-    public void setSize(float size) {
-        this.size = size;
-    }
-    
-    public enum BrushType{
-        Pencil,//铅笔
-        Pen,//钢笔
-        WaterColor,//水彩笔
-        Chalk,//粉笔
-        WaxCrayon,//蜡笔
-        Marker,//马克笔
-    }
+  public void addBrushSizeBar(BrushSizeBar brushSizeBar) {
+    mBrushSizeBar = brushSizeBar;
+    mBrushSizeBar.setBrush(this);
+    mBrushSizeBar.setSize(getSize());
+  }
+
+  public BrushType getBrushType() {
+    return mBrushType;
+  }
+
+  public void setBrushType(BrushType mBrushType) {
+    this.mBrushType = mBrushType;
+  }
+
+  public float getSize() {
+    return size;
+  }
+
+  public void setSize(float size) {
+    this.size = size;
+  }
+
+  public enum BrushType {
+    Pencil,//铅笔
+    Pen,//钢笔
+    WaterColor,//水彩笔
+    Chalk,//粉笔
+    WaxCrayon,//蜡笔
+    Marker,//马克笔
+  }
 
 //    public static final int BRUSH_CHALK = 7;
 //    public static final int BRUSH_CHARCOAL = 5;

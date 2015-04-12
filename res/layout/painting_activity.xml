@@ -9,13 +9,14 @@
         android:id="@+id/sketchpad"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/undo_redo_layout" />
+        android:layout_above="@+id/bottom_menu_layout" />
 
     <LinearLayout
         android:id="@+id/bar_picker_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:background="@drawable/popup_background"
         android:layout_alignParentTop="true" >
 
         <com.xszconfig.painter.view.BrushSizeBar
@@ -23,55 +24,26 @@
             android:layout_width="0dip"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
-            android:layout_marginTop="10dp"
+            android:layout_margin="@dimen/padding_half"
             android:background="@drawable/size_picker_bg" />
 
-        <!-- 不透明度， 也即是透明度，transparnecy bar -->
+        <!-- 不透明度， 也即是透明度，transparency bar -->
         <com.larswerkman.holocolorpicker.OpacityBar
             android:id="@+id/opacitybar"
             android:layout_width="0dip"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
+            android:layout_margin="@dimen/padding_half"
             android:background="@drawable/transparency_picker_bg" />
 
         </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/undo_redo_layout"
+        android:id="@+id/bottom_menu_layout"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_alignParentBottom="true"
-        android:background="@android:color/darker_gray"
-        android:orientation="horizontal" >
-
-        <ImageView
-            android:id="@+id/undo"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:src="@drawable/ic_undo" />
-
-        <ImageView
-            android:id="@+id/redo"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:src="@drawable/ic_redo" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/bottom_meun_layout"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_alignParentBottom="true"
-        android:background="@android:color/darker_gray"
+        android:background="@color/transparent"
         android:orientation="horizontal" >
 
         <com.xszconfig.painter.view.ColorPickerMenuView
@@ -80,7 +52,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:layout_margin="10dp"
+            android:layout_margin="@dimen/padding_half"
             android:gravity="center"
             />
 
@@ -103,7 +75,22 @@
             android:src="@drawable/ic_cut"
             android:gravity="center"
             />
-        
+
+        <ImageView
+            android:id="@+id/undo"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:src="@drawable/ic_undo" />
+
+        <ImageView
+            android:id="@+id/redo"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:src="@drawable/ic_redo" />
 
     </LinearLayout>
 
@@ -132,8 +119,8 @@
             android:layout_height="wrap_content"
             android:layout_alignBottom="@id/ring_picker"
             android:layout_alignParentRight="true"
-            android:layout_marginRight="15dp"
-            android:paddingRight="5dp"
+            android:layout_marginRight="@dimen/padding"
+            android:paddingRight="@dimen/padding_quarter"
             android:layout_marginBottom="40dp"
             android:background="@drawable/bar_background"
             android:layout_toRightOf="@id/ring_picker" />
@@ -149,14 +136,7 @@
             android:layout_alignTop="@id/ring_picker"
             android:layout_marginTop="50dp"
             android:background="@drawable/bar_background"
-            android:layout_marginRight="15dp"/>
-
-        <!-- SVBar = SaturationBar + ValueBar -->
-        <!-- <com.larswerkman.holocolorpicker.SVBar -->
-        <!-- android:id="@+id/svbar" -->
-        <!-- android:layout_above="@id/picker" -->
-        <!-- android:layout_width="wrap_content" -->
-        <!-- android:layout_height="wrap_content" /> -->
+            android:layout_marginRight="@dimen/padding"/>
 
     </RelativeLayout>
 
