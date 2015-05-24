@@ -90,8 +90,17 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   private float zoomCenterX, zoomCenterY;
   private final float startDistance = 30.0f, currDistance = 30.0f;
 
-  private boolean isCropMode = false;
-  private boolean isCanvasCropped = false;
+  private boolean mIsCropMode = false;
+  private CropModeListener mCropModeListener;
+  public interface CropModeListener {
+    public void onModeChanged(boolean newMode);
+    public void onCropDone();
+  }
+  public void setCropModeListener(CropModeListener listener){
+    this.mCropModeListener = listener;
+  }
+
+  private boolean mIsCanvasCropped = false;
   private boolean isFingerTouchingCroppedArea = false;
   private boolean isCroppedAreaMovingDone = false;
   private Path cropPath;
@@ -218,24 +227,25 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
       float touchX = event.getRawX();
       float touchY = event.getRawY();
 
-      if (isCropMode) {
+      /**
+       * Crop Mode Start
+       */
+      if (isCropMode()) {
 
         switch (action) {
           case MotionEvent.ACTION_DOWN:
-            if (isCropMode && !isCanvasCropped) {
+            if (!isCropDone()) {
               curAction = new CropAction(touchX, touchY);
 
-            } else if (isCropMode && isCanvasCropped
-                && !isCroppedAreaTouched(touchX, touchY)) {
+            } else if (isCropDone() && !isCroppedAreaTouched(touchX, touchY)) {
               /**
                * Todo
-               * Exit cropping mode if user is not touching cropped area after cropping.
+               * Exit crop mode if user is not touching the cropped area after cropping.
                * Consider it a mistake.
                */
               isFingerTouchingCroppedArea = false;
 
-            } else if (isCropMode && isCanvasCropped
-                && isCroppedAreaTouched(touchX, touchY)) {
+            } else if (isCropDone() && isCroppedAreaTouched(touchX, touchY)) {
               isFingerTouchingCroppedArea = true;
               isCroppedAreaMovingDone = false;
               downX = touchX;
@@ -244,7 +254,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
             break;
 
           case MotionEvent.ACTION_MOVE:
-            if (isCropMode && !isCanvasCropped) {
+            if (!isCropDone()) {
               Canvas canvas = mSurfaceHolder.lockCanvas();
               /**To apply every new action, clear the whole canvas,
                * then draw the saved painting if not null ,
@@ -265,14 +275,15 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
               }
               mSurfaceHolder.unlockCanvasAndPost(canvas);
 
-            } else if (isCropMode && isCanvasCropped && !isFingerTouchingCroppedArea) {
+            } else if (isCropDone() && !isFingerTouchingCroppedArea) {
               /**
                * Todo
-               * Exit cropping mode if user is not touching cropped area after cropping, consider it a mistake
+               * Exit crop mode if user is not touching the cropped area after cropping,
+               * consider it a mistake
                */
               // do nothing
 
-            } else if (isCropMode && isCanvasCropped && isFingerTouchingCroppedArea && !isCroppedAreaMovingDone) {
+            } else if (isCropDone() && isFingerTouchingCroppedArea && !isCroppedAreaMovingDone) {
               // move the cropped area when finger touches it
               float curX = event.getRawX();
               float curY = event.getRawY();
@@ -329,29 +340,12 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
               shownActions.clear();
               //TODO auto-save the crop result for now, so undo is not available.
 
-              // Clear values in crop mode.
-              isCropMode = false;
-              isCroppedAreaMovingDone = true;
-              isCanvasCropped = false;
-              isFingerTouchingCroppedArea = false;
-              cropPath = null;
-              boundPathWhenMoving = null;
-              boundsOfCropPath.setEmpty();
-              leftBitmap.recycle();
-              leftBitmap = null;
-              croppedBitmap.recycle();
-              croppedBitmap = null;
-              croppedBitmapDeltaX = 0;
-              croppedBitmapDeltaY = 0;
-              lastCroppedBitmapDeltaX = 0;
-              lastCroppedBitmapDeltaY = 0;
-              downX = 0;
-              downY = 0;
+              exitCropMode();
               return true;
             }
 
-            // Do the irregular crop when not yet cropped.
-            if (isCropMode && !isCanvasCropped) {
+            // Do the irregular crop when not yet cropped. This is the core of crop feature.
+            if (!isCropDone()) {
               // get a copy of the unedited bitmap first.
               Bitmap bitmapBeforeCrop = getScreenshotBitmap();
 
@@ -405,12 +399,12 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
               canvas2.drawPath(cropPath, ((CropAction) curAction).getPaint());
               mSurfaceHolder.unlockCanvasAndPost(canvas);
 
-              isCanvasCropped = true;
+              setCropDone(true);
 
-            } else if (isCropMode && isCanvasCropped && !isFingerTouchingCroppedArea) {
+            } else if (isCropDone() && !isFingerTouchingCroppedArea) {
               // do nothing
 
-            } else if (isCropMode && isCanvasCropped && isFingerTouchingCroppedArea && !isCroppedAreaMovingDone) {
+            } else if ( isCropDone()&& isFingerTouchingCroppedArea && !isCroppedAreaMovingDone) {
               // update value of cropPath.
               if (boundPathWhenMoving != null)
                 cropPath.set(boundPathWhenMoving);
@@ -419,7 +413,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
               lastCroppedBitmapDeltaY = croppedBitmapDeltaY;
 
 
-            } else if (isCropMode && isCanvasCropped && isFingerTouchingCroppedArea && isCroppedAreaMovingDone) {
+            } else if ( isCropDone()&& isFingerTouchingCroppedArea && isCroppedAreaMovingDone) {
               // do nothing
 
             }
@@ -428,7 +422,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
           default:
             break;
         }
-      } else if (!isCropMode) {
+
+        /**
+         * Crop Mode End
+         */
+      } else if (!isCropMode()) {
         switch (action) {
           case MotionEvent.ACTION_DOWN:
             // every touch event creates a new action
@@ -587,6 +585,28 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     return false;
   }
 
+  private void exitCropMode() {
+    // Clear values in crop mode.
+    setCropMode(false);
+    setCropDone(false);
+    isCroppedAreaMovingDone = true;
+    isFingerTouchingCroppedArea = false;
+    cropPath = null;
+    boundPathWhenMoving = null;
+    boundsOfCropPath.setEmpty();
+    leftBitmap.recycle();
+    leftBitmap = null;
+    croppedBitmap.recycle();
+    croppedBitmap = null;
+    croppedBitmapDeltaX = 0;
+    croppedBitmapDeltaY = 0;
+    lastCroppedBitmapDeltaX = 0;
+    lastCroppedBitmapDeltaY = 0;
+    downX = 0;
+    downY = 0;
+    drawShownActions();
+  }
+
 //	private void performZoom(){
 //	    
 //	    currZoomScale = currZoomScale < MIN_SCALE_WHEN_ZOOMING ? MIN_SCALE_WHEN_ZOOMING : currZoomScale; 
@@ -725,9 +745,34 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   }
 
 
-  public void toggleScissorsMode() {
-    isCropMode = (isCropMode == true) ? false : true;
+  public boolean isCropMode() {
+    return mIsCropMode;
+  }
 
+  private void setCropMode(boolean newMode){
+    mIsCropMode = newMode;
+    if (mCropModeListener != null){
+      mCropModeListener.onModeChanged(newMode);
+    }
+  }
+
+  private boolean isCropDone() {
+    return mIsCanvasCropped;
+  }
+
+  private void setCropDone(boolean isDone){
+    mIsCanvasCropped = isDone;
+    if(mCropModeListener != null && isDone){
+      mCropModeListener.onCropDone();
+    }
+  }
+
+  public void toggleCropMode() {
+    if( isCropMode() ){
+      exitCropMode();
+    }else{
+      setCropMode(true);
+    }
   }
 
   private boolean isCroppedAreaTouched(float x, float y) {

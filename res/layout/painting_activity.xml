@@ -8,8 +8,8 @@
     <com.xszconfig.painter.view.Sketchpad
         android:id="@+id/sketchpad"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/bottom_menu_layout" />
+        android:layout_height="match_parent"/>
+        <!--android:layout_above="@+id/bottom_menu_layout" />-->
 
     <LinearLayout
         android:id="@+id/bar_picker_layout"
@@ -28,7 +28,7 @@
             android:background="@drawable/size_picker_bg" />
 
         <!-- 不透明度， 也即是透明度，transparency bar -->
-        <com.larswerkman.holocolorpicker.OpacityBar
+        <com.xszconfig.painter.colorpicker.OpacityBar
             android:id="@+id/opacitybar"
             android:layout_width="0dip"
             android:layout_weight="1"
@@ -41,9 +41,9 @@
     <LinearLayout
         android:id="@+id/bottom_menu_layout"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="72dp"
         android:layout_alignParentBottom="true"
-        android:background="@color/transparent"
+        android:background="@drawable/popup_background"
         android:orientation="horizontal" >
 
         <com.xszconfig.painter.view.ColorPickerMenuView
@@ -56,25 +56,46 @@
             android:gravity="center"
             />
 
-        <ImageView
+        <RelativeLayout
             android:id="@+id/eraser"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:gravity="center"
-            android:src="@drawable/ic_menu_hard_eraser"
-            />
-        
-        <ImageView 
+            android:gravity="center">
+            <ImageView
+                android:id="@+id/eraser_bg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:src="@drawable/bg_light_yellow_circle"
+                />
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_menu_hard_eraser"
+                />
+        </RelativeLayout>
+
+        <RelativeLayout
             android:id="@+id/scissors"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:src="@drawable/ic_cut"
-            android:gravity="center"
-            />
+            android:gravity="center">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:src="@drawable/bg_light_blue_circle"
+                />
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_cut"
+                />
+        </RelativeLayout>
 
         <ImageView
             android:id="@+id/undo"
@@ -82,6 +103,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
+            android:padding="5dp"
             android:src="@drawable/ic_undo" />
 
         <ImageView
@@ -90,6 +112,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
+            android:padding="5dp"
             android:src="@drawable/ic_redo" />
 
     </LinearLayout>
@@ -101,11 +124,11 @@
         android:visibility="gone"
         android:background="@drawable/popup_background"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="48dp" >
+        android:layout_marginBottom="72dp" >
 
         <!-- 色相环，决定哪一种颜色被选中 -->
 
-        <com.larswerkman.holocolorpicker.ColorPicker
+        <com.xszconfig.painter.colorpicker.ColorPicker
             android:id="@+id/ring_picker"
             android:layout_width="200dp"
             android:layout_height="200dp"
@@ -113,7 +136,7 @@
 
         <!-- 明度，决定颜色的明暗程度 -->
 
-        <com.larswerkman.holocolorpicker.ValueBar
+        <com.xszconfig.painter.colorpicker.ValueBar
             android:id="@+id/valuebar"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
@@ -127,7 +150,7 @@
 
         <!-- 色度（饱和度），决定颜色的纯度 -->
 
-        <com.larswerkman.holocolorpicker.SaturationBar
+        <com.xszconfig.painter.colorpicker.SaturationBar
             android:id="@+id/saturationbar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

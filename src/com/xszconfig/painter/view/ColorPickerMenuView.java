@@ -69,10 +69,12 @@ public class ColorPickerMenuView extends View {
 
   @Override
   protected void onDraw(Canvas canvas) {
-    radius = Math.min(getHeight(), getWidth()) / 2;
+    if ( getRadius() == 0f ) {
+      setRadius(Math.min(getHeight(), getWidth()) / 2);
+    }
     float cx = getWidth() / 2;
     float cy = getHeight() / 2;
-    canvas.drawCircle(cx, cy, radius, colorPaint);
+    canvas.drawCircle(cx, cy, getRadius(), colorPaint);
 
     super.onDraw(canvas);
   }

@@ -9,9 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -20,13 +17,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-import com.larswerkman.holocolorpicker.ColorPicker;
-import com.larswerkman.holocolorpicker.ColorPicker.OnColorChangedListener;
-import com.larswerkman.holocolorpicker.OpacityBar;
-import com.larswerkman.holocolorpicker.SaturationBar;
-import com.larswerkman.holocolorpicker.SaturationBar.OnSaturationChangedListener;
-import com.larswerkman.holocolorpicker.ValueBar;
-import com.larswerkman.holocolorpicker.ValueBar.OnValueChangedListener;
+import com.xszconfig.painter.colorpicker.ColorPicker;
+import com.xszconfig.painter.colorpicker.ColorPicker.OnColorChangedListener;
+import com.xszconfig.painter.colorpicker.OpacityBar;
+import com.xszconfig.painter.colorpicker.SaturationBar;
+import com.xszconfig.painter.colorpicker.SaturationBar.OnSaturationChangedListener;
+import com.xszconfig.painter.colorpicker.ValueBar;
+import com.xszconfig.painter.colorpicker.ValueBar.OnValueChangedListener;
 import com.xszconfig.painter.view.BrushSizeBar;
 import com.xszconfig.painter.view.BrushSizeBar.OnSizeChangedListener;
 import com.xszconfig.painter.view.ColorPickerMenuView;
@@ -62,8 +59,8 @@ public class PaintActivity extends Activity implements OnClickListener {
   private BrushSizeBar sizeBar;
 
   private ColorPickerMenuView colorPickerMenu;
-  private ImageView scissorsMenu;
-  private ImageView eraserMenu;
+  private RelativeLayout scissorsMenu;
+  private RelativeLayout eraserMenu;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -84,13 +81,28 @@ public class PaintActivity extends Activity implements OnClickListener {
     //TODO if last painting was saved when exit, it'll restored automatically
     mSketchpad.setSavedPaintingPath(mSharedPreferences.getString(KEY_LAST_SAVED_PAINTING_PATH, ""));
     mSketchpad.setOnClickListener(this);
+    mSketchpad.setCropModeListener(new Sketchpad.CropModeListener() {
+      @Override
+      public void onModeChanged(boolean newMode) {
+        if (newMode == true) {
+          mToastUtil.shortToast(getString(R.string.enter_clip_mode));
+        } else {
+          mToastUtil.shortToast(getString(R.string.exit_clip_mode));
+        }
+      }
 
-    colorPickerMenu = findView(R.id.color_picker);
-    colorPickerMenu.setOnClickListener(this);
+      @Override
+      public void onCropDone() {
+        mToastUtil.shortToast(getString(R.string.move_and_click_tip));
+      }
+    });
+
     eraserMenu = findView(R.id.eraser);
     eraserMenu.setOnClickListener(this);
     scissorsMenu = findView(R.id.scissors);
     scissorsMenu.setOnClickListener(this);
+    colorPickerMenu = findView(R.id.color_picker);
+    colorPickerMenu.setOnClickListener(this);
 
     bottomMenuLayout = findView(R.id.bottom_menu_layout);
     sizeAndAlphaPickerLayout = findView(R.id.bar_picker_layout);
@@ -101,14 +113,15 @@ public class PaintActivity extends Activity implements OnClickListener {
     undo.setOnLongClickListener(new OnLongClickListener() {
       @Override
       public boolean onLongClick(View v) {
-        AlertDialogUtil.showDialogWithTwoChoices(mContext, "Clear the whole canvas ?",
-            "Clear it now !", new DialogInterface.OnClickListener() {
+        AlertDialogUtil.showDialogWithTwoChoices(mContext, getString(R.string.clear_canvas_warning),
+            getString(R.string.clear), new DialogInterface.OnClickListener() {
               @Override
               public void onClick(DialogInterface dialog, int which) {
                 mSketchpad.clear();
+                mToastUtil.shortToast(getString(R.string.cleared));
               }
             },
-            "Let it stay !", null
+            getString(R.string.do_not_clear), null
         );
         return true;
       }
@@ -196,11 +209,18 @@ public class PaintActivity extends Activity implements OnClickListener {
   public void onClick(View v) {
     switch (v.getId()) {
       case R.id.color_picker:
+        if (colorPickerMenu.getColor() != 0){
+          mSketchpad.setColor(colorPickerMenu.getColor());
+        }
         toggleVisibility(colorPickerLayout);
         break;
 
       case R.id.eraser:
-        mSketchpad.setColor(Color.WHITE);
+        if (mSketchpad.getColor() == Color.WHITE){
+          mSketchpad.setColor(colorPickerMenu.getColor());
+        }else{
+          mSketchpad.setColor(Color.WHITE);
+        }
         break;
 
       case R.id.sketchpad: {
@@ -215,14 +235,16 @@ public class PaintActivity extends Activity implements OnClickListener {
 
       case R.id.redo:
         mSketchpad.redo();
+        mToastUtil.shortToast(getString(R.string.redo));
         break;
 
       case R.id.undo:
         mSketchpad.undo();
+        mToastUtil.shortToast(getString(R.string.undo));
         break;
 
       case R.id.scissors:
-        mSketchpad.toggleScissorsMode();
+        mSketchpad.toggleCropMode();
         break;
 
       default:
@@ -240,44 +262,29 @@ public class PaintActivity extends Activity implements OnClickListener {
     return (int) (dpValue * scale + 0.5f);
   }
 
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    menu.add(0, 1, 1, "save to SD card");
-    return super.onCreateOptionsMenu(menu);
-  }
-
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
-    if (item.getItemId() == 1) {
-
-      tryToSavePainting();
-    }
-    return true;
-  }
-
   private void tryToSavePainting() {
     if (!Environment.getExternalStorageState().equals(
         Environment.MEDIA_MOUNTED)) {
-      mToastUtil.LongToast("External SD card not mounted");
+      mToastUtil.longToast(getString(R.string.sd_card_unavailable));
       return;
     }
 
-    String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_PATH;
+    String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_ROOT_PATH;
     String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis()) + ".png";
     File file = new File(directory, filename);
     boolean isSaved = savePicAsPNG(mSketchpad.getScreenshotBitmap(), file);
     if (isSaved) {
-      mToastUtil.LongToast("image saved: " + file.getPath());
+      mToastUtil.longToast(getString(R.string.image_saved) + file.getPath());
       mEditor.putString(KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();
     } else
-      mToastUtil.LongToast("fail to save image, checkout SD card");
+      mToastUtil.longToast(getString(R.string.fail_to_save_image));
   }
 
   @Override
   public void onBackPressed() {
-    AlertDialogUtil.showDialogWithTwoChoices(mContext, "Exit Without Saving ?",
+    AlertDialogUtil.showDialogWithTwoChoices(mContext, getString(R.string.saving_warning),
 
-        "Save", new DialogInterface.OnClickListener() {
+        getString(R.string.save), new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialog, int which) {
             tryToSavePainting();
@@ -285,7 +292,7 @@ public class PaintActivity extends Activity implements OnClickListener {
           }
         },
 
-        "Don\'t Save", new DialogInterface.OnClickListener() {
+        getString(R.string.do_not_save), new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialog, int which) {
             finish();

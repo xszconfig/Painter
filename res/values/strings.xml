@@ -1,8 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Painter</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_name">小画家</string>
+    <string name="action_settings">设置</string>
 
+    <string name="saving_warning">不保存就退出吗？</string>
+    <string name="save">保存一下</string>
+    <string name="do_not_save">不保存了</string>
+    <string name="image_saved">已保存至：</string>
+    <string name="fail_to_save_image">保存失败，请检查一下 SD 卡</string>
+    <string name="sd_card_unavailable">找不到 SD 卡，请检查</string>
+
+    <string name="undo">撤销(长按清空)</string>
+    <string name="redo">重绘</string>
+    <string name="long_press_to_clear">长按清空</string>
+    <string name="cleared">已清空</string>
+    <string name="clear_canvas_warning">清空整个画布？</string>
+    <string name="clear">清空它</string>
+    <string name="do_not_clear">留着吧</string>
+
+    <string name="enter_clip_mode">进入裁剪模式</string>
+    <string name="exit_clip_mode">退出裁剪模式</string>
+    <string name="move_and_click_tip">移动裁剪部分后点击确定</string>
 </resources>

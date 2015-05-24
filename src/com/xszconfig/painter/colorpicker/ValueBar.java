@@ -1,20 +1,4 @@
-/*
- * Copyright 2012 Lars Werkman
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package com.larswerkman.holocolorpicker;
+package com.xszconfig.painter.colorpicker;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -34,7 +18,7 @@ import android.view.View;
 import com.xszconfig.painter.R;
 
 
-public class OpacityBar extends View {
+public class ValueBar extends View {
 
   public static final int COLOR_GREEN = 0xff81ff00;
   /*
@@ -42,7 +26,7 @@ public class OpacityBar extends View {
  */
   private static final String STATE_PARENT = "parent";
   private static final String STATE_COLOR = "color";
-  private static final String STATE_OPACITY = "opacity";
+  private static final String STATE_VALUE = "value";
   private static final String STATE_ORIENTATION = "orientation";
 
   /**
@@ -112,6 +96,7 @@ public class OpacityBar extends View {
    */
   private Paint mBarTailCirclePaint;
 
+
   /**
    * {@code Shader} instance used to fill the shader of the paint.
    */
@@ -139,35 +124,12 @@ public class OpacityBar extends View {
   /**
    * Factor used to calculate the position to the Opacity on the bar.
    */
-  private float mPosToOpacFactor;
+  private float mPosToSatFactor;
 
   /**
    * Factor used to calculate the Opacity to the postion on the bar.
    */
-  private float mOpacToPosFactor;
-
-  /**
-   * Interface and listener so that changes in OpacityBar are sent
-   * to the host activity/fragment
-   */
-  private OnOpacityChangedListener onOpacityChangedListener;
-
-  /**
-   * Opacity of the latest entry of the onOpacityChangedListener.
-   */
-  private int oldChangedListenerOpacity;
-
-  public interface OnOpacityChangedListener {
-    public void onOpacityChanged(int opacity);
-  }
-
-  public void setOnOpacityChangedListener(OnOpacityChangedListener listener) {
-    this.onOpacityChangedListener = listener;
-  }
-
-  public OnOpacityChangedListener getOnOpacityChangedListener() {
-    return this.onOpacityChangedListener;
-  }
+  private float mSatToPosFactor;
 
   /**
    * {@code ColorPicker} instance used to control the ColorPicker.
@@ -179,17 +141,40 @@ public class OpacityBar extends View {
    */
   private boolean mOrientation;
 
-  public OpacityBar(Context context) {
+  /**
+   * Interface and listener so that changes in ValueBar are sent
+   * to the host activity/fragment
+   */
+  private OnValueChangedListener onValueChangedListener;
+
+  /**
+   * Value of the latest entry of the onValueChangedListener.
+   */
+  private int oldChangedListenerValue;
+
+  public interface OnValueChangedListener {
+    public void onValueChanged(int value);
+  }
+
+  public void setOnValueChangedListener(OnValueChangedListener listener) {
+    this.onValueChangedListener = listener;
+  }
+
+  public OnValueChangedListener getOnValueChangedListener() {
+    return this.onValueChangedListener;
+  }
+
+  public ValueBar(Context context) {
     super(context);
     init(null, 0);
   }
 
-  public OpacityBar(Context context, AttributeSet attrs) {
+  public ValueBar(Context context, AttributeSet attrs) {
     super(context, attrs);
     init(attrs, 0);
   }
 
-  public OpacityBar(Context context, AttributeSet attrs, int defStyle) {
+  public ValueBar(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
     init(attrs, defStyle);
   }
@@ -221,7 +206,7 @@ public class OpacityBar extends View {
     mBarHeadCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     mBarTailCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    mBarPointerPosition = mBarLength + mBarPointerHaloRadius;
+    mBarPointerPosition = mBarPointerHaloRadius;
 
     mBarPointerHaloPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     mBarPointerHaloPaint.setColor(Color.BLACK);
@@ -230,8 +215,8 @@ public class OpacityBar extends View {
     mBarPointerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     mBarPointerPaint.setColor(Color.WHITE);
 
-    mPosToOpacFactor = 0xFF / ((float) mBarLength);
-    mOpacToPosFactor = ((float) mBarLength) / 0xFF;
+    mPosToSatFactor = 1 / ((float) mBarLength);
+    mSatToPosFactor = ((float) mBarLength) / 1;
   }
 
   @Override
@@ -296,34 +281,33 @@ public class OpacityBar extends View {
     // Update variables that depend of mBarLength.
     if (!isInEditMode()) {
       shader = new LinearGradient(mBarPointerHaloRadius, 0,
-          x1, y1, new int[]{
-          Color.HSVToColor(0x00, mHSVColor),
-          Color.HSVToColor(0xFF, mHSVColor)}, null,
-          Shader.TileMode.CLAMP
-      );
+          x1, y1,
+          new int[]{Color.HSVToColor(0xFF, mHSVColor), Color.BLACK},
+          null, Shader.TileMode.CLAMP);
     } else {
       shader = new LinearGradient(mBarPointerHaloRadius, 0,
-          x1, y1, new int[]{
-          0x0081ff00, COLOR_GREEN}, null, Shader.TileMode.CLAMP
-      );
+          x1, y1,
+          new int[]{COLOR_GREEN, Color.BLACK}, null,
+          Shader.TileMode.CLAMP);
       Color.colorToHSV(COLOR_GREEN, mHSVColor);
     }
 
     mBarPaint.setShader(shader);
-    mBarHeadCirclePaint.setColor(0x0081ff00);
-    mBarTailCirclePaint.setColor(COLOR_GREEN);
+    mBarHeadCirclePaint.setColor(COLOR_GREEN);
+    mBarTailCirclePaint.setColor(Color.BLACK);
 
-    mPosToOpacFactor = 0xFF / ((float) mBarLength);
-    mOpacToPosFactor = ((float) mBarLength) / 0xFF;
+    mPosToSatFactor = 1 / ((float) mBarLength);
+    mSatToPosFactor = ((float) mBarLength) / 1;
 
     float[] hsvColor = new float[3];
     Color.colorToHSV(mColor, hsvColor);
 
     if (!isInEditMode()) {
-      mBarPointerPosition = Math.round((mOpacToPosFactor * Color.alpha(mColor))
-          + mBarPointerHaloRadius);
+      mBarPointerPosition = Math
+          .round((mBarLength - (mSatToPosFactor * hsvColor[2]))
+              + mBarPointerHaloRadius);
     } else {
-      mBarPointerPosition = mBarLength + mBarPointerHaloRadius;
+      mBarPointerPosition = mBarPointerHaloRadius;
     }
   }
 
@@ -388,29 +372,34 @@ public class OpacityBar extends View {
 //					mBarPointerPaint.setColor(mColor);
             if (mPicker != null) {
               mPicker.setNewCenterColor(mColor);
+              mPicker.changeOpacityBarColor(mColor);
             }
             invalidate();
+
           } else if (dimen < mBarPointerHaloRadius) {
             mBarPointerPosition = mBarPointerHaloRadius;
-            mColor = Color.TRANSPARENT;
-//					mBarPointerPaint.setColor(mColor);
-            if (mPicker != null) {
-              mPicker.setNewCenterColor(mColor);
-            }
-            invalidate();
-          } else if (dimen > (mBarPointerHaloRadius + mBarLength)) {
-            mBarPointerPosition = mBarPointerHaloRadius + mBarLength;
             mColor = Color.HSVToColor(mHSVColor);
 //					mBarPointerPaint.setColor(mColor);
             if (mPicker != null) {
               mPicker.setNewCenterColor(mColor);
+              mPicker.changeOpacityBarColor(mColor);
+            }
+            invalidate();
+
+          } else if (dimen > (mBarPointerHaloRadius + mBarLength)) {
+            mBarPointerPosition = mBarPointerHaloRadius + mBarLength;
+            mColor = Color.BLACK;
+//					mBarPointerPaint.setColor(mColor);
+            if (mPicker != null) {
+              mPicker.setNewCenterColor(mColor);
+              mPicker.changeOpacityBarColor(mColor);
             }
             invalidate();
           }
         }
-        if (onOpacityChangedListener != null && oldChangedListenerOpacity != getOpacity()) {
-          onOpacityChangedListener.onOpacityChanged(getOpacity());
-          oldChangedListenerOpacity = getOpacity();
+        if (onValueChangedListener != null && oldChangedListenerValue != mColor) {
+          onValueChangedListener.onValueChanged(mColor);
+          oldChangedListenerValue = mColor;
         }
         break;
       case MotionEvent.ACTION_UP:
@@ -440,18 +429,19 @@ public class OpacityBar extends View {
     Color.colorToHSV(color, mHSVColor);
     shader = new LinearGradient(mBarPointerHaloRadius, 0,
         x1, y1, new int[]{
-        Color.HSVToColor(0x00, mHSVColor), color}, null,
-        Shader.TileMode.CLAMP
+        color, Color.BLACK}, null, Shader.TileMode.CLAMP
     );
 
     mBarPaint.setShader(shader);
-    mBarHeadCirclePaint.setColor(Color.HSVToColor(0x00, mHSVColor));
-    mBarTailCirclePaint.setColor(color);
+    mBarHeadCirclePaint.setColor(color);
+    mBarTailCirclePaint.setColor(Color.BLACK);
 
     calculateColor(mBarPointerPosition);
 //		mBarPointerPaint.setColor(mColor);
     if (mPicker != null) {
       mPicker.setNewCenterColor(mColor);
+      if (mPicker.hasOpacityBar())
+        mPicker.changeOpacityBarColor(mColor);
     }
     invalidate();
   }
@@ -459,34 +449,19 @@ public class OpacityBar extends View {
   /**
    * Set the pointer on the bar. With the opacity value.
    *
-   * @param saturation float between 0 > 255
+   * @param value float between 0 > 1
    */
-  public void setOpacity(int opacity) {
-    mBarPointerPosition = Math.round((mOpacToPosFactor * opacity))
-        + mBarPointerHaloRadius;
+  public void setValue(float value) {
+    mBarPointerPosition = Math
+        .round((mBarLength - (mSatToPosFactor * value))
+            + mBarPointerHaloRadius);
     calculateColor(mBarPointerPosition);
 //		mBarPointerPaint.setColor(mColor);
     if (mPicker != null) {
       mPicker.setNewCenterColor(mColor);
+      mPicker.changeOpacityBarColor(mColor);
     }
     invalidate();
-  }
-
-  /**
-   * Get the currently selected opacity.
-   *
-   * @return The int value of the currently selected opacity.
-   */
-  public int getOpacity() {
-    int opacity = Math
-        .round((mPosToOpacFactor * (mBarPointerPosition - mBarPointerHaloRadius)));
-    if (opacity < 5) {
-      return 0x00;
-    } else if (opacity > 250) {
-      return 0xFF;
-    } else {
-      return opacity;
-    }
   }
 
   /**
@@ -501,15 +476,9 @@ public class OpacityBar extends View {
     } else if (coord > mBarLength) {
       coord = mBarLength;
     }
-
-    mColor = Color.HSVToColor(
-        Math.round(mPosToOpacFactor * coord),
-        mHSVColor);
-    if (Color.alpha(mColor) > 250) {
-      mColor = Color.HSVToColor(mHSVColor);
-    } else if (Color.alpha(mColor) < 5) {
-      mColor = Color.TRANSPARENT;
-    }
+    mColor = Color.HSVToColor(new float[]{mHSVColor[0],
+        mHSVColor[1],
+        (float) (1 - (mPosToSatFactor * coord))});
   }
 
   /**
@@ -528,7 +497,7 @@ public class OpacityBar extends View {
    * is added to the ColorPicker
    *
    * @param picker
-   * @see ColorPicker#addSVBar(SVBar)
+   * @see ColorPicker#addSVBar(com.xszconfig.painter.colorpicker.SVBar)
    */
   public void setColorPicker(ColorPicker picker) {
     mPicker = picker;
@@ -541,7 +510,10 @@ public class OpacityBar extends View {
     Bundle state = new Bundle();
     state.putParcelable(STATE_PARENT, superState);
     state.putFloatArray(STATE_COLOR, mHSVColor);
-    state.putInt(STATE_OPACITY, getOpacity());
+
+    float[] hsvColor = new float[3];
+    Color.colorToHSV(mColor, hsvColor);
+    state.putFloat(STATE_VALUE, hsvColor[2]);
 
     return state;
   }
@@ -554,6 +526,6 @@ public class OpacityBar extends View {
     super.onRestoreInstanceState(superState);
 
     setColor(Color.HSVToColor(savedState.getFloatArray(STATE_COLOR)));
-    setOpacity(savedState.getInt(STATE_OPACITY));
+    setValue(savedState.getFloat(STATE_VALUE));
   }
 }

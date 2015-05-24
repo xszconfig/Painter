@@ -118,13 +118,9 @@ public class Action {
     canvas.drawPath(mPath, paint);
   }
 
-  ;
-
   public void move(float mx, float my) {
     mPath.lineTo(mx, my);
   }
-
-  ;
 
   public void moveWhenZoomed(float targetX, float targetY, float pivotX, float pivotY, float scale) {
     float newTargetX = targetX, newTargetY = targetY;

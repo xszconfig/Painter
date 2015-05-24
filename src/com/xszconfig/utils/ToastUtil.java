@@ -11,11 +11,11 @@ public class ToastUtil {
     this.mContext = mContext;
   }
 
-  public void ShortToast(String message) {
+  public void shortToast(String message) {
     Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
   }
 
-  public void LongToast(String message) {
+  public void longToast(String message) {
     Toast.makeText(mContext, message, Toast.LENGTH_LONG).show();
   }
 }
