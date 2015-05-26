@@ -11,17 +11,13 @@ import android.graphics.Path;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.RectF;
 import android.graphics.Region;
-import android.os.Environment;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.xszconfig.painter.PaintActivity;
-import com.xszconfig.utils.DateUtil;
 import com.xszconfig.utils.StringUtil;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +30,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   private static int DEFAULT_SKETCHPAD_BG_COLOR = Color.WHITE;
 
   private SurfaceHolder mSurfaceHolder;
+  private Bitmap screenshot;
+  private Canvas backupCanvas;
 
   private Action curAction;
   private Brush curBrush;
@@ -100,17 +98,15 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     this.mCropModeListener = listener;
   }
 
-  private boolean mIsCanvasCropped = false;
-  private boolean isFingerTouchingCroppedArea = false;
+  private boolean mIsCropped = false;
+  private boolean isTouchingCroppedArea = false;
   private boolean isCroppedAreaMovingDone = false;
-  private Path cropPath;
-  private Path destinationPath;
   private Bitmap croppedBitmap;
   private Bitmap leftBitmap;
-  private float croppedBitmapDeltaX = 0f;
-  private float croppedBitmapDeltaY = 0f;
-  private float lastCroppedBitmapDeltaX = 0f;
-  private float lastCroppedBitmapDeltaY = 0f;
+  private float cropMoveDeltaX = 0f;
+  private float cropMoveDeltaY = 0f;
+  private float lastCropMoveDeltaX = 0f;
+  private float lastCropMoveDeltaY = 0f;
   private float downX = 0f;
   private float downY = 0f;
 
@@ -188,20 +184,79 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
   private void drawShownActions() {
     Canvas canvas = mSurfaceHolder.lockCanvas();
-    if (isZoomMode() && currMatrix != null)
+    if (isZoomMode() && currMatrix != null){
       canvas.setMatrix(currMatrix);
+    }
 
     canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
     if (savedPaintingBitmap != null) {
       canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
     }
 
-    for (Action a : shownActions) {
-      a.draw(canvas);
+    // Item of shownActions is either Action or CropAction.
+    for (Action action : shownActions) {
+      if ( !(action instanceof CropAction)){
+        action.draw(canvas);
+
+      }else if ( action instanceof CropAction){
+//        performCrop((CropAction) action);
+      }
     }
     mSurfaceHolder.unlockCanvasAndPost(canvas);
   }
 
+  private void performCrop(CropAction cropAction){
+    Bitmap bitmapBeforeCrop = getScreenshot();
+
+    RectF boundsOfCropPath = new RectF();
+    cropAction.getCropPath().computeBounds(boundsOfCropPath, true);
+    // left The X coordinate of the left side of the rectangle
+    // top The Y coordinate of the top of the rectangle
+    // right The X coordinate of the right side of the rectangle
+    // bottom The Y coordinate of the bottom of the rectangle
+    float left = boundsOfCropPath.left;
+    float right = boundsOfCropPath.right;
+    float top = boundsOfCropPath.top;
+    float bottom = boundsOfCropPath.bottom;
+
+    // Get the cropped bitmap we WANT !!
+    Bitmap croppedRect = Bitmap.createBitmap(
+        bitmapBeforeCrop, (int) left, (int) top,
+        (int) Math.abs(left - right),
+        (int) Math.abs(top - bottom));
+    croppedBitmap = createEmptyBitmap();
+    Canvas painter1 = new Canvas(croppedBitmap);
+    if (croppedRect != null && !croppedRect.isRecycled()) {
+      painter1.drawBitmap(croppedRect, left, top, null);
+      croppedRect.recycle();
+    }
+    // eraser the area between the path and its Rect.
+    painter1.clipRect(boundsOfCropPath);
+    painter1.clipPath(cropAction.getCropPath(), Region.Op.DIFFERENCE);
+    //Mode.CLEAR makes the unwanted area transparent.
+    painter1.drawColor(0, Mode.CLEAR);
+    // by now, croppedBitmap is the result of the irregular crop, for later use.
+
+    // Generate the bitmap after cropping
+    leftBitmap = createEmptyBitmap();
+    Canvas painter2 = new Canvas(leftBitmap);
+    if (bitmapBeforeCrop != null && !bitmapBeforeCrop.isRecycled()){
+      painter2.drawBitmap(bitmapBeforeCrop, 0, 0, null);
+    }
+    // eraser the area inside the closed path.
+    painter2.clipRect(boundsOfCropPath);
+    painter2.clipPath(cropAction.getCropPath(), Region.Op.INTERSECT);
+    painter2.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+    // by now, leftBitmap is what left after the irregular crop, for later use.
+
+    Canvas canvas2 = mSurfaceHolder.lockCanvas();
+    canvas2.drawBitmap(leftBitmap, 0, 0, null);
+    canvas2.drawBitmap(croppedBitmap, cropAction.getMoveDatlaX(),
+        cropAction.getMoveDatlaY(), null);
+    mSurfaceHolder.unlockCanvasAndPost(canvas2);
+
+    setCropDone(true);
+  }
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
   }
@@ -234,14 +289,17 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
             downX = touchX;
             downY = touchY;
             handleCropModeDownEvent(touchX, touchY);
+            initScreenshotAndCanvas();
             break;
 
           case MotionEvent.ACTION_MOVE:
-            handleCropModeMoveEvent(event, touchX, touchY);
+            handleCropModeMoveEvent(event, touchX, touchY, (CropAction)curAction);
             break;
 
           case MotionEvent.ACTION_UP:
-            if (handleCropModeUpEvent(event, downX, downY)) return true;
+            if (handleCropModeUpEvent(event, downX, downY, (CropAction)curAction)){
+              return true;
+            }
             break;
 
           default:
@@ -312,7 +370,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
           case MotionEvent.ACTION_UP:
             /*
-             * Up event is handled the same way as Normal Mode.
+             * Zoom mode Up-event is handled the same way as Normal Mode.
              */
             return handleNormalModeUpEvent(event, downX, downY);
 
@@ -333,6 +391,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
             downY = touchY;
             // Every touch event creates a new action
             createAction(touchX, touchY);
+            initScreenshotAndCanvas();
             break;
 
           case MotionEvent.ACTION_MOVE:
@@ -432,6 +491,17 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     return false;
   }
 
+  private void initScreenshotAndCanvas() {
+    if (screenshot == null){
+      screenshot = createEmptyBitmap();
+      backupCanvas = new Canvas(screenshot);
+      backupCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+      if (savedPaintingBitmap != null && !savedPaintingBitmap.isRecycled()) {
+        backupCanvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+      }
+    }
+  }
+
   private boolean isClickEvent(MotionEvent event, float downX, float downY){
     final int CLICK_POINTER_COUNT = 1;
     if (event.getPointerCount() != CLICK_POINTER_COUNT){
@@ -482,56 +552,76 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
   private void handleNormalModeMoveEvent(float touchX, float touchY) {
   /*
+   * TODO old method, delete later
+   *
    * To apply every new action, clear the whole canvas,
    * then draw the saved painting if not null ,
    * and draw all shownActions again, and the new action at last.
    *
    */
-    Canvas canvas = mSurfaceHolder.lockCanvas();
-    canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
-    if (savedPaintingBitmap != null) {
-      canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-    }
-    for (Action a : shownActions) {
-      a.draw(canvas);
-    }
     if (curAction != null) {
       curAction.move(touchX, touchY);
-      curAction.draw(canvas);
+      curAction.draw(backupCanvas);
     }
+
+    Canvas canvas = mSurfaceHolder.lockCanvas();
+    canvas.drawBitmap(screenshot, 0, 0, null);
+//    canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+//    if (savedPaintingBitmap != null) {
+//      canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+//    }
+//    for (Action a : shownActions) {
+//      a.draw(canvas);
+//    }
+//    if (curAction != null) {
+//      curAction.move(touchX, touchY);
+//      curAction.draw(canvas);
+//    }
     mSurfaceHolder.unlockCanvasAndPost(canvas);
   }
 
-  private boolean handleCropModeUpEvent(MotionEvent event, float downX, float downY) {
+  private boolean handleCropModeUpEvent(MotionEvent event,
+                                        float downX, float downY,
+                                        CropAction cropAction) {
     /**
      * Start handling click event first.
      */
     // Single click on the cropped area to stop it from being dragging around.
-    if (isClickEvent(event, downX, downY) && isFingerTouchingCroppedArea ) {
+    if (isClickEvent(event, downX, downY) && isTouchingCroppedArea) {
       // draw the final result , clear the cropping path
       Bitmap resultBitmap = createEmptyBitmap();
       Canvas resultCanvas = new Canvas(resultBitmap);
       resultCanvas.drawBitmap(leftBitmap, 0, 0, null);
-      resultCanvas.drawBitmap(croppedBitmap, croppedBitmapDeltaX, croppedBitmapDeltaY, null);
+      resultCanvas.drawBitmap(croppedBitmap, cropMoveDeltaX, cropMoveDeltaY, null);
+      backupCanvas.drawBitmap(resultBitmap, 0, 0, null);
 
       Canvas moveCanvas = mSurfaceHolder.lockCanvas();
-      moveCanvas.drawBitmap(resultBitmap, 0, 0, null);
+      moveCanvas.drawBitmap(getScreenshot(), 0, 0, null);
       mSurfaceHolder.unlockCanvasAndPost(moveCanvas);
 
-      //TODO auto-save the crop result for now, so undo is not available.
-      // undo & redo support will be added later, which is complex.
-      String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Painter/";
-      String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis()) + "_cropped.png";
-      File file = new File(directory, filename);
-      boolean isSaved = PaintActivity.savePicAsPNG(resultBitmap, file);
-      if (isSaved){
-        PaintActivity.mEditor.putString(PaintActivity.KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();
-      }
-      savedPaintingBitmap = resultBitmap;
-      savedFilePath = file.getPath();
+//      TODO auto-save the crop result for now, so undo is not available.
+//      undo & redo support will be added later, which is complex.
+//      String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Painter/";
+//      String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis()) + "_cropped.png";
+//      File file = new File(directory, filename);
+//      boolean isSaved = PaintActivity.savePicAsPNG(resultBitmap, file);
+//      if (isSaved){
+//        PaintActivity.mEditor.putString(PaintActivity.KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();
+//      }
+//      savedPaintingBitmap = resultBitmap;
+//      savedFilePath = file.getPath();
+//      removedActions.clear();
+//      shownActions.clear();
+//      TODO auto-save the crop result for now, so undo is not available.
+
+      cropAction.setDestinationPath(cropAction.getInternalPath());
+      cropAction.setMoveDatlaX(cropMoveDeltaX);
+      cropAction.setMoveDatlaY(cropMoveDeltaY);
+      // Clear the removed action list every time draw something new
       removedActions.clear();
-      shownActions.clear();
-      //TODO auto-save the crop result for now, so undo is not available.
+      // Add curAction to the end of the list
+      shownActions.add(cropAction);
+      curAction = null;
 
       exitCropMode();
       return true;
@@ -546,16 +636,15 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     // Do the irregular crop when not yet cropped. This is the core of crop feature.
     if (!isCropDone()) {
       // get a copy of the unedited bitmap first.
-      Bitmap bitmapBeforeCrop = getScreenshotBitmap();
+      Bitmap bitmapBeforeCrop = getScreenshot();
 
       // auto-add line to become a closed path
       Canvas canvas = mSurfaceHolder.lockCanvas();
-      ((CropAction) curAction).closeCropPath(canvas);
+      cropAction.closeCropPath(canvas);
       mSurfaceHolder.unlockCanvasAndPost(canvas);
 
-      cropPath = curAction.getPath();
       RectF boundsOfCropPath = new RectF();
-      cropPath.computeBounds(boundsOfCropPath, true);
+      cropAction.getCropPath().computeBounds(boundsOfCropPath, true);
       // left The X coordinate of the left side of the rectangle
       // top The Y coordinate of the top of the rectangle
       // right The X coordinate of the right side of the rectangle
@@ -578,7 +667,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
       }
       // eraser the area between the path and its Rect.
       painter1.clipRect(boundsOfCropPath);
-      painter1.clipPath(cropPath, Region.Op.DIFFERENCE);
+      painter1.clipPath(cropAction.getCropPath(), Region.Op.DIFFERENCE);
       //Mode.CLEAR makes the unwanted area transparent.
       painter1.drawColor(0, Mode.CLEAR);
       // by now, croppedBitmap is the result of the irregular crop, for later use.
@@ -590,31 +679,27 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
         painter2.drawBitmap(bitmapBeforeCrop, 0, 0, null);
       // eraser the area inside the closed path.
       painter2.clipRect(boundsOfCropPath);
-      painter2.clipPath(cropPath, Region.Op.INTERSECT);
+      painter2.clipPath(cropAction.getCropPath(), Region.Op.INTERSECT);
       painter2.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
       // by now, leftBitmap is what left after the irregular crop, for later use.
 
       Canvas canvas2 = mSurfaceHolder.lockCanvas();
       canvas2.drawBitmap(bitmapBeforeCrop, 0, 0, null);
-      canvas2.drawPath(cropPath, ((CropAction) curAction).getPaint());
-      mSurfaceHolder.unlockCanvasAndPost(canvas);
+      canvas2.drawPath(cropAction.getCropPath(), cropAction.getPaint());
+      mSurfaceHolder.unlockCanvasAndPost(canvas2);
 
       setCropDone(true);
 
-    } else if (isCropDone() && !isFingerTouchingCroppedArea) {
+    } else if (isCropDone() && !isTouchingCroppedArea) {
       // no-op, waiting for dragging around.
 
-    } else if ( isCropDone()&& isFingerTouchingCroppedArea && !isCroppedAreaMovingDone) {
-      // update value of cropPath.
-      if (destinationPath != null){
-        cropPath.set(destinationPath);
-      }
-      lastCroppedBitmapDeltaX = croppedBitmapDeltaX;
-      lastCroppedBitmapDeltaY = croppedBitmapDeltaY;
+    } else if ( isCropDone()&& isTouchingCroppedArea && !isCroppedAreaMovingDone) {
+      // update value
+      lastCropMoveDeltaX = cropMoveDeltaX;
+      lastCropMoveDeltaY = cropMoveDeltaY;
 
-    } else if ( isCropDone()&& isFingerTouchingCroppedArea && isCroppedAreaMovingDone) {
-      // waiting for the final click.
-      ((CropAction)curAction).setDestinationPath(destinationPath);
+    } else if ( isCropDone()&& isTouchingCroppedArea && isCroppedAreaMovingDone) {
+      // no-op, waiting for the final click.
     }
     /**
      * End handling clip event.
@@ -622,55 +707,49 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     return false;
   }
 
-  private void handleCropModeMoveEvent(MotionEvent event, float touchX, float touchY) {
+  private void handleCropModeMoveEvent(MotionEvent event,
+                                       float touchX, float touchY,
+                                       CropAction cropAction) {
     if (!isCropDone()) {
       Canvas canvas = mSurfaceHolder.lockCanvas();
-  /*
-   * To apply every new action, clear the whole canvas,
-   * then draw the saved painting if not null ,
-   * and draw all shownActions again, and the new action at last.
-   *
-   */
-      canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
-      if (savedPaintingBitmap != null) {
-        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-      }
-      for (Action a : shownActions) {
-        a.draw(canvas);
-      }
-      if (curAction != null) {
-        curAction.move(touchX, touchY);
-        curAction.draw(canvas);
-
+//      canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+//      if (savedPaintingBitmap != null) {
+//        canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+//      }
+//      for (Action a : shownActions) {
+//        a.draw(canvas);
+//      }
+      canvas.drawBitmap(screenshot, 0, 0, null);
+      // Draw the crop edge, this should not be done to screenshot.
+      if (cropAction != null) {
+        cropAction.move(touchX, touchY);
+        cropAction.draw(canvas);
       }
       mSurfaceHolder.unlockCanvasAndPost(canvas);
 
-    } else if (isCropDone() && !isFingerTouchingCroppedArea) {
-      // do nothing
+    } else if (isCropDone() && !isTouchingCroppedArea) {
+      // no-op, waiting for dragging around.
 
-    } else if (isCropDone() && isFingerTouchingCroppedArea && !isCroppedAreaMovingDone) {
+    } else if (isCropDone() && isTouchingCroppedArea && !isCroppedAreaMovingDone) {
       // move the cropped area when finger touches it
       float curX = event.getRawX();
       float curY = event.getRawY();
       // take last moving dalta into consideration.
-      croppedBitmapDeltaX = lastCroppedBitmapDeltaX + (curX - downX);
-      croppedBitmapDeltaY = lastCroppedBitmapDeltaY + (curY - downY);
+      cropMoveDeltaX = lastCropMoveDeltaX + (curX - downX);
+      cropMoveDeltaY = lastCropMoveDeltaY + (curY - downY);
 
       if (leftBitmap != null && !leftBitmap.isRecycled()
           && croppedBitmap != null && !croppedBitmap.isRecycled()
-          && cropPath != null && curAction != null) {
+          && cropAction != null) {
         Canvas moveCanvas = mSurfaceHolder.lockCanvas();
         moveCanvas.drawBitmap(leftBitmap, 0, 0, null);
-        moveCanvas.drawBitmap(croppedBitmap, croppedBitmapDeltaX,
-            croppedBitmapDeltaY, null);
+        moveCanvas.drawBitmap(croppedBitmap, cropMoveDeltaX, cropMoveDeltaY, null);
 
         // draw the cropping path when moving.
-        destinationPath = new Path();
-        destinationPath.set(cropPath);
-        // needless to take last moving dalta into consideration.
-        destinationPath.offset(croppedBitmapDeltaX - lastCroppedBitmapDeltaX,
-            croppedBitmapDeltaY - lastCroppedBitmapDeltaY);
-        moveCanvas.drawPath(destinationPath, ((CropAction) curAction).getPaint());
+        Path originalPath = new Path(cropAction.getCropPath());
+        originalPath.offset(cropMoveDeltaX, cropMoveDeltaY);
+        cropAction.setInternalPath(originalPath);
+        moveCanvas.drawPath(cropAction.getInternalPath(), cropAction.getPaint());
         mSurfaceHolder.unlockCanvasAndPost(moveCanvas);
       }
     }
@@ -680,11 +759,15 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     if (!isCropDone()) {
       curAction = new CropAction(touchX, touchY);
 
-    } else if (isCropDone() && !isCroppedAreaTouched(touchX, touchY)) {
-      isFingerTouchingCroppedArea = false;
+    } else if (isCropDone() &&
+        curAction != null && curAction instanceof CropAction &&
+        !isCroppedAreaTouched((CropAction)curAction, touchX, touchY)) {
+      isTouchingCroppedArea = false;
 
-    } else if (isCropDone() && isCroppedAreaTouched(touchX, touchY)) {
-      isFingerTouchingCroppedArea = true;
+    } else if (isCropDone() &&
+        curAction != null && curAction instanceof CropAction &&
+        isCroppedAreaTouched((CropAction)curAction, touchX, touchY)) {
+      isTouchingCroppedArea = true;
       isCroppedAreaMovingDone = false;
     }
   }
@@ -694,13 +777,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     setCropMode(false);
     setCropDone(false);
     isCroppedAreaMovingDone = true;
-    isFingerTouchingCroppedArea = false;
-    if (cropPath != null){
-      cropPath = null;
-    }
-    if (destinationPath != null){
-      destinationPath = null;
-    }
+    isTouchingCroppedArea = false;
     if (leftBitmap != null){
       leftBitmap.recycle();
       leftBitmap = null;
@@ -709,13 +786,13 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
       croppedBitmap.recycle();
       croppedBitmap = null;
     }
-    croppedBitmapDeltaX = 0;
-    croppedBitmapDeltaY = 0;
-    lastCroppedBitmapDeltaX = 0;
-    lastCroppedBitmapDeltaY = 0;
+    cropMoveDeltaX = 0;
+    cropMoveDeltaY = 0;
+    lastCropMoveDeltaX = 0;
+    lastCropMoveDeltaY = 0;
     downX = 0;
     downY = 0;
-    drawShownActions();
+//    drawShownActions();
   }
 
 //	private void performZoom(){
@@ -801,17 +878,21 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
    *
    * @return bitmap contains the screenshot
    */
-  public Bitmap getScreenshotBitmap() {
-    Bitmap bmp = createEmptyBitmap();
-    Canvas canvas = new Canvas(bmp);
-    canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
-    if (savedPaintingBitmap != null && !savedPaintingBitmap.isRecycled()) {
-      canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-    }
-    for (Action a : shownActions) {
-      a.draw(canvas);
-    }
-    return bmp;
+  public Bitmap getScreenshot() {
+//  Todo use this instead !
+return screenshot;
+//    TODO this is wrong !
+//    Bitmap bmp = createEmptyBitmap();
+//    Canvas canvas = new Canvas(bmp);
+//    canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+//    if (savedPaintingBitmap != null && !savedPaintingBitmap.isRecycled()) {
+//      canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+//    }
+//    for (Action a : shownActions) {
+//      a.draw(canvas);
+//      TODO wring here
+//    }
+//    return bmp;
   }
 
   private Bitmap createEmptyBitmap() {
@@ -878,11 +959,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   private boolean isCropDone() {
-    return mIsCanvasCropped;
+    return mIsCropped;
   }
 
   private void setCropDone(boolean isDone){
-    mIsCanvasCropped = isDone;
+    mIsCropped = isDone;
     if(mCropModeListener != null && isDone){
       mCropModeListener.onCropDone();
     }
@@ -896,13 +977,10 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  private boolean isCroppedAreaTouched(float x, float y) {
-    if (cropPath == null)
-      return false;
-
-    // NOTE: this approach maybe incorrect.
+  private boolean isCroppedAreaTouched(CropAction cropAction, float x, float y) {
+    // NOTE: this approach maybe slightly incorrect.
     RectF boundsOfCropPath = new RectF();
-    cropPath.computeBounds(boundsOfCropPath, false);
+    cropAction.getInternalPath().computeBounds(boundsOfCropPath, false);
     return boundsOfCropPath.contains(x, y);
   }
 

@@ -25,7 +25,10 @@ public class CropAction extends Action {
   private final Paint mPaint;
 
   private Path cropPath;
+  private Path internalPath;
   private Path destinationPath;
+  private float moveDatlaX;
+  private float moveDatlaY;
 
   public CropAction(float x, float y) {
     mPath = new Path();
@@ -53,6 +56,7 @@ public class CropAction extends Action {
       mPath.close();
       canvas.drawPath(mPath, mPaint);
       setCropPath(mPath);
+      setInternalPath(mPath);
     }
   }
 
@@ -66,6 +70,30 @@ public class CropAction extends Action {
 
   public void setCropPath(Path cropPath) {
     this.cropPath = cropPath;
+  }
+
+  public Path getInternalPath() {
+    return internalPath;
+  }
+
+  public void setInternalPath(Path internalPath) {
+    this.internalPath = internalPath;
+  }
+
+  public float getMoveDatlaX() {
+    return moveDatlaX;
+  }
+
+  public void setMoveDatlaX(float moveDatlaX) {
+    this.moveDatlaX = moveDatlaX;
+  }
+
+  public float getMoveDatlaY() {
+    return moveDatlaY;
+  }
+
+  public void setMoveDatlaY(float moveDatlaY) {
+    this.moveDatlaY = moveDatlaY;
   }
 
   public Path getDestinationPath() {

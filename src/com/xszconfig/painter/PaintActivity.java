@@ -272,7 +272,7 @@ public class PaintActivity extends Activity implements OnClickListener {
     String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + Constants.SDCARD_ROOT_PATH;
     String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis()) + ".png";
     File file = new File(directory, filename);
-    boolean isSaved = savePicAsPNG(mSketchpad.getScreenshotBitmap(), file);
+    boolean isSaved = savePicAsPNG(mSketchpad.getScreenshot(), file);
     if (isSaved) {
       mToastUtil.longToast(getString(R.string.image_saved) + file.getPath());
       mEditor.putString(KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();
