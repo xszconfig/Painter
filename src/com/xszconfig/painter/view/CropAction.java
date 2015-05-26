@@ -24,6 +24,9 @@ public class CropAction extends Action {
 
   private final Paint mPaint;
 
+  private Path cropPath;
+  private Path destinationPath;
+
   public CropAction(float x, float y) {
     mPath = new Path();
     mPath.moveTo(x, y);
@@ -49,6 +52,7 @@ public class CropAction extends Action {
     if (canvas != null && mPaint != null && mPath != null) {
       mPath.close();
       canvas.drawPath(mPath, mPaint);
+      setCropPath(mPath);
     }
   }
 
@@ -56,4 +60,19 @@ public class CropAction extends Action {
     return mPaint;
   }
 
+  public Path getCropPath() {
+    return cropPath;
+  }
+
+  public void setCropPath(Path cropPath) {
+    this.cropPath = cropPath;
+  }
+
+  public Path getDestinationPath() {
+    return destinationPath;
+  }
+
+  public void setDestinationPath(Path destinationPath) {
+    this.destinationPath = destinationPath;
+  }
 }
