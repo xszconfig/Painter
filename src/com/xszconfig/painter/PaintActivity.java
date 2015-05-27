@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -40,12 +41,14 @@ import java.io.IOException;
 public class PaintActivity extends Activity implements OnClickListener {
   public static final String PREFERENCE_FILE_NAME_STRING = "PaintActivity";
   public static final String KEY_LAST_SAVED_PAINTING_PATH = "KEY_LAST_SAVED_PAINTING_PATH";
+//  public static final String KEY_LAST_SAVED_BRUSH_SIZE = "KEY_LAST_SAVED_BRUSH_SIZE";
+//  public static final String KEY_LAST_SAVED_BRUSH_COLOR = "KEY_LAST_SAVED_BRUSH_COLOR";
 
   private Context mContext;
   private Sketchpad mSketchpad;
   private ToastUtil mToastUtil;
   private SharedPreferences mSharedPreferences;
-  public static Editor mEditor;
+  private  Editor mEditor;
 
   private LinearLayout bottomMenuLayout;
   private LinearLayout sizeAndAlphaPickerLayout;
@@ -138,6 +141,16 @@ public class PaintActivity extends Activity implements OnClickListener {
 
   }
 
+//  @Override
+//  protected void onSaveInstanceState(Bundle outState) {
+//    super.onSaveInstanceState(outState);
+//  }
+//
+//  @Override
+//  protected void onRestoreInstanceState(Bundle inState) {
+//    super.onRestoreInstanceState(inState);
+//  }
+
   private void setupSizeBar() {
     sizeBar = findView(R.id.size_picker);
     sizeBar.setOnSizeChangedListener(new OnSizeChangedListener() {
@@ -146,6 +159,11 @@ public class PaintActivity extends Activity implements OnClickListener {
         mSketchpad.getBrush().setSize(size);
       }
     });
+
+//    float savedSize = mSharedPreferences.getFloat(KEY_LAST_SAVED_BRUSH_SIZE, 0f);
+//    if( savedSize != 0f ){
+//      sizeBar.setSize(savedSize);
+//    }
   }
 
   private void setupColorPicker() {
@@ -169,6 +187,11 @@ public class PaintActivity extends Activity implements OnClickListener {
         colorPickerMenu.setColor(color);
       }
     });
+
+//    int savedSize = mSharedPreferences.getInt(KEY_LAST_SAVED_BRUSH_COLOR, 0);
+//    if( savedSize != 0 ){
+//      picker.setColor(savedSize);
+//    }
 
     opacityBar.setOnOpacityChangedListener(new OpacityBar.OnOpacityChangedListener() {
       @Override
@@ -282,6 +305,7 @@ public class PaintActivity extends Activity implements OnClickListener {
 
   @Override
   public void onBackPressed() {
+//    saveBrushColorAndSize();
     AlertDialogUtil.showDialogWithTwoChoices(mContext, getString(R.string.saving_warning),
 
         getString(R.string.save), new DialogInterface.OnClickListener() {
@@ -302,6 +326,12 @@ public class PaintActivity extends Activity implements OnClickListener {
     );
 
   }
+
+//  private void saveBrushColorAndSize() {
+//    mEditor.putInt(KEY_LAST_SAVED_BRUSH_COLOR, mSketchpad.getColor())
+//        .putFloat(KEY_LAST_SAVED_BRUSH_SIZE, mSketchpad.getBrush().getSize())
+//        .commit();
+//  }
 
   public static boolean savePicAsPNG(Bitmap b, File file) {
     final int COMPRESS_QUALITY = 100;
