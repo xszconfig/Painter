@@ -29,8 +29,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   private static int DEFAULT_SKETCHPAD_BG_COLOR = Color.WHITE;
 
   private SurfaceHolder mSurfaceHolder;
-  private Bitmap screenshot;
-  private Canvas backupCanvas;
+  private Bitmap screenshotBitmap;
+  private Canvas screenshotCanvas;
 
   private Action curAction;
   private Brush curBrush;
@@ -155,7 +155,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
                              int height) {
     tryLoadingSavedPaintingBitmap();
     initScreenshotAndCanvas();
-    applyScreenshotToSurfaceHolder();
+    applyScreenshot();
 
     if (haveActionsToShow()) {
       performShownActions();
@@ -179,24 +179,24 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
      *  Perform all actions to the screenshot.
      */
     if (isZoomMode() && currMatrix != null){
-      backupCanvas.setMatrix(currMatrix);
+      screenshotCanvas.setMatrix(currMatrix);
     }
 
-    backupCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+    screenshotCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
     if (savedPaintingBitmap != null) {
-      backupCanvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+      screenshotCanvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
     }
 
     // Item of shownActions is either Action or CropAction.
     for (Action action : shownActions) {
       if (action instanceof CropAction){
-        performAutoCrop(backupCanvas, (CropAction) action);
+        performAutoCrop(screenshotCanvas, (CropAction) action);
       }else {
-        action.draw(backupCanvas);
+        action.draw(screenshotCanvas);
       }
     }
 
-    applyScreenshotToSurfaceHolder();
+    applyScreenshot();
   }
 
   private void performAutoCrop(Canvas backupCanvas, CropAction cropAction){
@@ -458,12 +458,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     zoomCenterX = (x1 + x2) / 2;
     zoomCenterY = (y1 + y2) / 2;
 
-    //TODO not yet done here !
-//	                if( Math.abs(currDistance - startDistance) >= MIN_ZOOM_TRIGGER_DISTANCE ) {
-//	                    curZoomScale = lastZoomScale * (currDistance / startDistance ) ;
     curZoomScale = (currDistance / startDistance );
     performZoom();
-//	                }
   }
 
   private void handleZoomingUpEvent(MotionEvent event) {
@@ -510,17 +506,18 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   private void initScreenshotAndCanvas() {
-    if (screenshot == null){
-      screenshot = createEmptyBitmap();
-      backupCanvas = new Canvas(screenshot);
+    if (getScreenshot() == null){
+      setScreenshot(createEmptyBitmap());
+      // bind screenshotCanvas and screenshot
+      screenshotCanvas = new Canvas(getScreenshot());
 
       if (isZoomMode() && currMatrix != null){
-        backupCanvas.setMatrix(currMatrix);
+        screenshotCanvas.setMatrix(currMatrix);
       }
 
-      backupCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+      screenshotCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
       if (savedPaintingBitmap != null && !savedPaintingBitmap.isRecycled()) {
-        backupCanvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+        screenshotCanvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
       }
     }
   }
@@ -583,9 +580,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
      */
     if (curAction != null) {
       curAction.move(touchX, touchY);
-      curAction.draw(backupCanvas);
+      curAction.draw(screenshotCanvas);
     }
-    applyScreenshotToSurfaceHolder();
+    applyScreenshot();
   }
 
   private boolean handleCropModeUpEvent(MotionEvent event,
@@ -601,24 +598,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
       Canvas resultCanvas = new Canvas(resultBitmap);
       resultCanvas.drawBitmap(leftBitmap, 0, 0, null);
       resultCanvas.drawBitmap(croppedBitmap, cropMoveDeltaX, cropMoveDeltaY, null);
-      backupCanvas.drawBitmap(resultBitmap, 0, 0, null);
+      screenshotCanvas.drawBitmap(resultBitmap, 0, 0, null);
 
-      applyScreenshotToSurfaceHolder();
-
-//      TODO auto-save the crop result for now, so undo is not available.
-//      undo & redo support will be added later, which is complex.
-//      String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Painter/";
-//      String filename = DateUtil.format("yyyyMMdd_HHmmss", System.currentTimeMillis()) + "_cropped.png";
-//      File file = new File(directory, filename);
-//      boolean isSaved = PaintActivity.savePicAsPNG(resultBitmap, file);
-//      if (isSaved){
-//        PaintActivity.mEditor.putString(PaintActivity.KEY_LAST_SAVED_PAINTING_PATH, file.getPath()).commit();
-//      }
-//      savedPaintingBitmap = resultBitmap;
-//      savedFilePath = file.getPath();
-//      removedActions.clear();
-//      shownActions.clear();
-//      TODO auto-save the crop result for now, so undo is not available.
+      applyScreenshot();
 
       cropAction.setDestinationPath(cropAction.getInternalPath());
       cropAction.setMoveDatlaX(cropMoveDeltaX);
@@ -741,7 +723,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
                                        CropAction cropAction) {
     if (!isCropDone()) {
       Canvas canvas = mSurfaceHolder.lockCanvas();
-      canvas.drawBitmap(screenshot, 0, 0, null);
+      canvas.drawBitmap(getScreenshot(), 0, 0, null);
       /*
        * Draw a dash-effect cropPath.
        * This should not be done to the screenshot because the cropPath is not what we want.
@@ -831,9 +813,9 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     curZoomScale = curZoomScale > MAX_ZOOM_SCALE ? MAX_ZOOM_SCALE : curZoomScale;
     setZoomMode((curZoomScale != MIN_FINAL_SCALE));
 
-//	    if( currMatrix == null){
+	    if( currMatrix == null){
     currMatrix = new Matrix();
-//	    }
+	    }
 
 //  TODO from library/src/main/java/uk/co/senab/photoview/PhotoViewAttacher.java#L749-749
 //    mSuppMatrix.postScale(scaleFactor, scaleFactor, focusX, focusY);
@@ -846,11 +828,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
     // NOTE: Matrix of canvas needs to be set first, before we can drawColor() and drawBitmap() !
     Bitmap temp = Bitmap.createBitmap(getScreenshot());
-    backupCanvas.setMatrix(getDrawMatrix());
-    backupCanvas.drawBitmap(temp, 0, 0, null);
+    screenshotCanvas.setMatrix(getDrawMatrix());
+    screenshotCanvas.drawBitmap(temp, 0, 0, null);
     // Todo(xieshaoze 150528) still could not perform zoom correctly
 
-    applyScreenshotToSurfaceHolder();
+    applyScreenshot();
   }
 
   private void updateBaseMatrix() {
@@ -918,7 +900,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
    * @return bitmap contains the screenshot
    */
   public Bitmap getScreenshot() {
-    return screenshot;
+    return screenshotBitmap;
+  }
+
+  public void setScreenshot(Bitmap newScreenshot) {
+    this.screenshotBitmap = newScreenshot;
   }
 
   private Bitmap createEmptyBitmap() {
@@ -1025,14 +1011,14 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     removedActions.clear();
 
     if (isZoomMode() && currMatrix != null){
-      backupCanvas.setMatrix(currMatrix);
+      screenshotCanvas.setMatrix(currMatrix);
     }
-    backupCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+    screenshotCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
 
-    applyScreenshotToSurfaceHolder();
+    applyScreenshot();
   }
 
-  private void applyScreenshotToSurfaceHolder() {
+  private void applyScreenshot() {
     Canvas canvas = mSurfaceHolder.lockCanvas();
     canvas.drawBitmap(getScreenshot(), 0, 0, null);
     mSurfaceHolder.unlockCanvasAndPost(canvas);
