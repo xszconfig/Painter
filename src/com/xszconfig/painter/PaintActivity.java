@@ -306,6 +306,12 @@ public class PaintActivity extends Activity implements OnClickListener {
   @Override
   public void onBackPressed() {
 //    saveBrushColorAndSize();
+
+    if (!mSketchpad.haveActionsToShow()){
+      finish();
+      return;
+    }
+
     AlertDialogUtil.showDialogWithTwoChoices(mContext, getString(R.string.saving_warning),
 
         getString(R.string.save), new DialogInterface.OnClickListener() {
