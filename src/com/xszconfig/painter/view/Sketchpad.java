@@ -6,19 +6,17 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PointF;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.RectF;
 import android.graphics.Region;
-import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
-import android.widget.ImageView;
 
 import com.xszconfig.utils.StringUtil;
 
@@ -29,7 +27,7 @@ import java.util.List;
  * The Sketchpad to draw paintings on. This is a {@link android.view.SurfaceView}.
  */
 
-public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
+public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, ViewerGestureListener.ViewRectChangedListener {
 
   private static int DEFAULT_SKETCHPAD_BG_COLOR = Color.WHITE;
 
@@ -66,22 +64,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
    * boolean value to indicate if the canvas is zooming.
    */
   private boolean mIsZoomed = false;
-
-  /**
-   * max and min scales when the user stop zooming.
-   */
-  private final float MAX_FINAL_SCALE = 2.0f;
-  private final float MIN_FINAL_SCALE = 1.0f;
-  /**
-   * max and min scales when user is zooming the canvas.
-   */
-  private final float MIN_ZOOM_SCALE = 0.25f;
-  private final float MAX_ZOOM_SCALE = 10.0f;
-
-  private float curScale = 1.0f;
-  private float lastScale = 1.0f;
-  private ScaleGestureDetector mScaleDetector;
   private Matrix currMatrix;
+  private ViewerGestureListener mGestureListener;
+  private ScaleGestureDetector mScaleDetector;
+  private int mForceWidth ;
+  private int mForceHeight;
 
   private boolean mIsCropMode = false;
   private CropModeListener mCropModeListener;
@@ -104,6 +91,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   private float lastCropMoveDeltaY = 0f;
   private float downX = 0f;
   private float downY = 0f;
+  private Paint mPaintingPaint;
 
   public Sketchpad(Context context) {
     super(context);
@@ -128,7 +116,18 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     curColor = Action.DEFAULT_COLOR;
 
     setDrawingCacheEnabled(true);
-    mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
+
+    mPaintingPaint = new Paint();
+    mPaintingPaint.setFilterBitmap(true);
+    mPaintingPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+    DisplayMetrics displaymetrics = context.getResources().getDisplayMetrics();
+    final int PAINTING_WIDTH = displaymetrics.widthPixels;
+    final int PAINTING_HEIGHT = displaymetrics.heightPixels;
+    mForceWidth = PAINTING_WIDTH;
+    mForceHeight = PAINTING_HEIGHT;
+    mGestureListener = new ViewerGestureListener(mForceWidth, mForceHeight, this);
+    mGestureListener.setViewCenter((float)mForceWidth / 2.0F, (float)mForceHeight / 2.0F);
+    mScaleDetector = new ScaleGestureDetector(context, mGestureListener);
   }
 
   @Override
@@ -334,7 +333,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 //            }
 //            mSurfaceHolder.unlockCanvasAndPost(canvas);
 //          }
-          break;
+            break;
 
           case MotionEvent.ACTION_UP:
             /*
@@ -379,6 +378,17 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
        *  Handle double-finger-zooming events here.
        */
     }else if (event.getPointerCount() == 2) {
+
+//      if(!mGestureListener.isScaling()) {
+//        float f = 0.5F * (event.getX(0) + event.getX(1));
+//        float f1 = 0.5F * (event.getY(0) + event.getY(1));
+//        if(mGestureListener.isFakeScale()) {
+//          mGestureListener.onScale(f, f1, 1.0F);
+//        } else {
+//          mGestureListener.setFakeScale(true);
+//          mGestureListener.onScaleBegin(f, f1);
+//        }
+//      }
       mScaleDetector.onTouchEvent(event);
     }
 
@@ -686,8 +696,18 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   @Override
+  public void onViewRectChanged() {
+    if (getScreenshot() != null){
+      RectF rectf = mGestureListener.getDstRect();
+      Canvas canvas = mSurfaceHolder.lockCanvas();
+//      canvas.drawColor(Color.WHITE, Mode.CLEAR);
+      canvas.drawBitmap(getScreenshot(), null, rectf, mPaintingPaint);
+      mSurfaceHolder.unlockCanvasAndPost(canvas);
+    }
+  }
+
+  @Override
   protected void onDraw(Canvas canvas) {
-    super.onDraw(canvas);
   }
 
   public Brush getBrush() {
@@ -866,23 +886,4 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     super.onMeasure(widthMeasureSpec, heightMeasureSpec);
   }
 
-
-  private class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener {
-
-    private ScaleListener() {
-    }
-
-    public boolean onScaleBegin(ScaleGestureDetector scalegesturedetector) {
-      setZoomMode(true);
-      return true;
-    }
-
-    public boolean onScale(ScaleGestureDetector detector) {
-      return true;
-    }
-
-    public void onScaleEnd(ScaleGestureDetector scalegesturedetector) {
-      setZoomMode(lastScale != 1.0F);
-    }
-  }
 }
