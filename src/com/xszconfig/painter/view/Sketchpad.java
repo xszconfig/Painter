@@ -7,13 +7,18 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.ImageView;
 
 import com.xszconfig.utils.StringUtil;
 
@@ -62,11 +67,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
    */
   private boolean mIsZoomed = false;
 
-
-  /**
-   * Minimum distance to trigger zooming.
-   */
-  private final float MIN_ZOOM_TRIGGER_DISTANCE = 30.0f;
   /**
    * max and min scales when the user stop zooming.
    */
@@ -77,16 +77,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
    */
   private final float MIN_ZOOM_SCALE = 0.25f;
   private final float MAX_ZOOM_SCALE = 10.0f;
-  /**
-   * The zooming scale of current state.
-   */
-  private float curZoomScale = 1.0f;
-  private float lastZoomScale = 1.0f;
-  private Matrix currMatrix;
 
-  private float zoomCenterX, zoomCenterY;
-  private float startDistance = 30.0f;
-  private float currDistance = 30.0f;
+  private float curScale = 1.0f;
+  private float lastScale = 1.0f;
+  private ScaleGestureDetector mScaleDetector;
+  private Matrix currMatrix;
 
   private boolean mIsCropMode = false;
   private CropModeListener mCropModeListener;
@@ -110,26 +105,22 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
   private float downX = 0f;
   private float downY = 0f;
 
-  private final Matrix mBaseMatrix = new Matrix();
-  private final Matrix mDrawMatrix = new Matrix();
-  private final Matrix mSuppMatrix = new Matrix();
-
   public Sketchpad(Context context) {
     super(context);
-    init();
+    init(context);
   }
 
   public Sketchpad(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
-    init();
+    init(context);
   }
 
   public Sketchpad(Context context, AttributeSet attrs) {
     super(context, attrs);
-    init();
+    init(context);
   }
 
-  private void init() {
+  private void init(Context context) {
     mSurfaceHolder = this.getHolder();
     mSurfaceHolder.addCallback(this);
     this.setFocusable(true);
@@ -137,11 +128,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     curColor = Action.DEFAULT_COLOR;
 
     setDrawingCacheEnabled(true);
+    mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
   }
 
   @Override
   public void surfaceCreated(SurfaceHolder holder) {
-    //shownActions will be auto-restored if not null
     if (shownActions == null){
       shownActions = new ArrayList<Action>();
     }
@@ -160,8 +151,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     if (haveActionsToShow()) {
       performShownActions();
     }
-
-    updateBaseMatrix();
   }
 
   private void tryLoadingSavedPaintingBitmap() {
@@ -301,12 +290,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
          */
         switch (action) {
           case MotionEvent.ACTION_DOWN:
-            downX = touchX;
-            downY = touchY;
-            // every touch event creates a new action
-            if (currMatrix != null) {
-              createActionWhenZoomed(touchX, touchY, zoomCenterX, zoomCenterY, curZoomScale);
-            }
+//            downX = touchX;
+//            downY = touchY;
+//            if (currMatrix != null) {
+//              createActionWhenZoomed(touchX, touchY, zoomCenterX, zoomCenterY, curZoomScale);
+//            }
             break;
 
           case MotionEvent.ACTION_MOVE:
@@ -331,37 +319,28 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
             // mSurfaceHolder.unlockCanvasAndPost(canvas);
             // }
 
-          {
-            // draw on the origin canvas.
-            Canvas canvas = mSurfaceHolder.lockCanvas();
-  /*
-   * Todo old method delete later
-   *
-   * To apply every new action, clear the whole canvas,
-   * then draw the saved painting if not null ,
-   * and draw all shownActions again, and the new action at last.
-   *
-   */
-            canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
-            if (savedPaintingBitmap != null) {
-              canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-            }
-            for (Action a : shownActions) {
-              a.draw(canvas);
-            }
-            if (curAction != null) {
-              curAction.move(touchX, touchY);
-              curAction.draw(canvas);
-            }
-            mSurfaceHolder.unlockCanvasAndPost(canvas);
-          }
+//          {
+//            Canvas canvas = mSurfaceHolder.lockCanvas();
+//            canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
+//            if (savedPaintingBitmap != null) {
+//              canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
+//            }
+//            for (Action a : shownActions) {
+//              a.draw(canvas);
+//            }
+//            if (curAction != null) {
+//              curAction.move(touchX, touchY);
+//              curAction.draw(canvas);
+//            }
+//            mSurfaceHolder.unlockCanvasAndPost(canvas);
+//          }
           break;
 
           case MotionEvent.ACTION_UP:
             /*
              * Zoom mode Up-event is handled the same way as Normal Mode.
              */
-            return handleNormalModeUpEvent(event, downX, downY);
+//            return handleNormalModeUpEvent(event, downX, downY);
 
           default:
             break;
@@ -378,7 +357,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
           case MotionEvent.ACTION_DOWN:
             downX = touchX;
             downY = touchY;
-            // Every touch event creates a new action
             createAction(touchX, touchY);
             break;
 
@@ -400,115 +378,16 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
       /**
        *  Handle double-finger-zooming events here.
        */
-	    }else if (event.getPointerCount() == 2) {
-	        float x1, y1, x2, y2;
-	        float deltaX, deltaY;
-
-	        switch (event.getAction() & MotionEvent.ACTION_MASK ) {
-	            case MotionEvent.ACTION_POINTER_DOWN:
-                handleZoomingDownEvent(event);
-	                break;
-
-	            case MotionEvent.ACTION_MOVE:
-                handleZoomingMoveEvent(event);
-	                break;
-
-	            case MotionEvent.ACTION_POINTER_UP:
-                handleZoomingUpEvent(event);
-                return true;
-
-	            default:
-	                break;
-	        }
+    }else if (event.getPointerCount() == 2) {
+      mScaleDetector.onTouchEvent(event);
     }
 
     return false;
   }
 
-  private void handleZoomingDownEvent(MotionEvent event) {
-    float x1;
-    float y1;
-    float x2;
-    float y2;
-    float disX;
-    float disY;
-    x1 = event.getX(0);
-    y1 = event.getY(0);
-    x2 = event.getX(1);
-    y2 = event.getY(1);
-    disX = x1 - x2;
-    disY = y1 - y2;
-    startDistance = (float)Math.sqrt(disX * disX + disY * disY);
-  }
-
-  private void handleZoomingMoveEvent(MotionEvent event) {
-    float x1;
-    float y1;
-    float x2;
-    float y2;
-    float disX;
-    float disY;
-    x1 = event.getX(0);
-    y1 = event.getY(0);
-    x2 = event.getX(1);
-    y2 = event.getY(1);
-    disX = x1 - x2;
-    disY = y1 - y2;
-    currDistance = (float)Math.sqrt(disX * disX + disY * disY);
-    zoomCenterX = (x1 + x2) / 2;
-    zoomCenterY = (y1 + y2) / 2;
-
-    curZoomScale = (currDistance / startDistance );
-    performZoom();
-  }
-
-  private void handleZoomingUpEvent(MotionEvent event) {
-    float x1;
-    float y1;
-    float x2;
-    float y2;
-    float disX;
-    float disY;
-    x1 = event.getX(0);
-    y1 = event.getY(0);
-    x2 = event.getX(1);
-    y2 = event.getY(1);
-    disX = x1 - x2;
-    disY = y1 - y2;
-    currDistance = (float)Math.sqrt(disX * disX + disY * disY);
-    zoomCenterX = (x1 + x2) / 2;
-    zoomCenterY = (y1 + y2) / 2;
-    /**
-     * Auto zoom out to max final scale if the user zoom it in too much
-     */
-    if( curZoomScale > MAX_FINAL_SCALE){
-        float tmp = Math.abs(curZoomScale - MAX_FINAL_SCALE) / 10 ;
-        while( curZoomScale > MAX_FINAL_SCALE){
-            curZoomScale -= tmp;
-            performZoom();
-        }
-        curZoomScale = curZoomScale < MAX_FINAL_SCALE ? MAX_FINAL_SCALE : curZoomScale;
-        performZoom();
-
-    /**
-     * Auto zoom in to min final scale if the user zoom it out too much
-     */
-    }else if( curZoomScale < MIN_FINAL_SCALE){
-        float tmp = Math.abs(curZoomScale - MIN_FINAL_SCALE) / 10 ;
-        while( curZoomScale < MIN_FINAL_SCALE){
-            curZoomScale += tmp;
-            performZoom();
-        }
-        curZoomScale = curZoomScale > MIN_FINAL_SCALE ? MIN_FINAL_SCALE : curZoomScale;
-        performZoom();
-    }
-    lastZoomScale = curZoomScale;
-  }
-
   private void initScreenshotAndCanvas() {
     if (getScreenshot() == null){
       setScreenshot(createEmptyBitmap());
-      // bind screenshotCanvas and screenshot
       screenshotCanvas = new Canvas(getScreenshot());
 
       if (isZoomMode() && currMatrix != null){
@@ -559,7 +438,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * Start handling draw event.
      */
-    // Clear the removed action list every time draw something new
     removedActions.clear();
     // Add curAction to the end of the list
     shownActions.add(curAction);
@@ -807,44 +685,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     downY = 0;
   }
 
-  private void performZoom(){
-
-    curZoomScale = curZoomScale < MIN_ZOOM_SCALE ? MIN_ZOOM_SCALE : curZoomScale;
-    curZoomScale = curZoomScale > MAX_ZOOM_SCALE ? MAX_ZOOM_SCALE : curZoomScale;
-    setZoomMode((curZoomScale != MIN_FINAL_SCALE));
-
-	    if( currMatrix == null){
-    currMatrix = new Matrix();
-	    }
-
-//  TODO from library/src/main/java/uk/co/senab/photoview/PhotoViewAttacher.java#L749-749
-//    mSuppMatrix.postScale(scaleFactor, scaleFactor, focusX, focusY);
-//    mSuppMatrix.postTranslate(deltaX, deltaY);
-//  TODO from library/src/main/java/uk/co/senab/photoview/PhotoViewAttacher.java#L749-749
-
-    // Todo(xieshaoze 150528) still could not perform zoom correctly
-    currMatrix.setScale(curZoomScale, curZoomScale, zoomCenterX, zoomCenterY);
-    currMatrix.postTranslate(zoomCenterX, zoomCenterY);
-
-    // NOTE: Matrix of canvas needs to be set first, before we can drawColor() and drawBitmap() !
-    Bitmap temp = Bitmap.createBitmap(getScreenshot());
-    screenshotCanvas.setMatrix(getDrawMatrix());
-    screenshotCanvas.drawBitmap(temp, 0, 0, null);
-    // Todo(xieshaoze 150528) still could not perform zoom correctly
-
-    applyScreenshot();
-  }
-
-  private void updateBaseMatrix() {
-    mBaseMatrix.reset();
-  }
-
-  public Matrix getDrawMatrix() {
-    mDrawMatrix.set(mBaseMatrix);
-    mDrawMatrix.postConcat(currMatrix);
-    return mDrawMatrix;
-  }
-
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
@@ -954,9 +794,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
 
   private void setZoomMode(boolean isZoomed){
     mIsZoomed = isZoomed;
-//    if(mCropModeListener != null && isDone){
-//      mCropModeListener.onCropDone();
-//    }
   }
 
   public boolean isCropMode() {
@@ -1004,7 +841,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     if (savedPaintingBitmap != null) {
       clearSavedPaintingPath();
       savedPaintingBitmap.recycle();
-//	        after recycling a bitmap, we need to set it to null also.
+      // After recycling a bitmap, we need to set it to null as well.
       savedPaintingBitmap = null;
     }
     shownActions.clear();
@@ -1022,5 +859,30 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback {
     Canvas canvas = mSurfaceHolder.lockCanvas();
     canvas.drawBitmap(getScreenshot(), 0, 0, null);
     mSurfaceHolder.unlockCanvasAndPost(canvas);
+  }
+
+  @Override
+  protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+  }
+
+
+  private class ScaleListener implements ScaleGestureDetector.OnScaleGestureListener {
+
+    private ScaleListener() {
+    }
+
+    public boolean onScaleBegin(ScaleGestureDetector scalegesturedetector) {
+      setZoomMode(true);
+      return true;
+    }
+
+    public boolean onScale(ScaleGestureDetector detector) {
+      return true;
+    }
+
+    public void onScaleEnd(ScaleGestureDetector scalegesturedetector) {
+      setZoomMode(lastScale != 1.0F);
+    }
   }
 }
