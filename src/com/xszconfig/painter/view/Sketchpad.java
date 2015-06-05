@@ -467,10 +467,11 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
      * the screenshot for other use.
      */
     if (curAction != null) {
-      curAction.move(touchX, touchY);
+      curAction.move(mGestureListener.inverseX(touchX), mGestureListener.inverseY(touchY));
       curAction.draw(screenshotCanvas);
     }
-    applyScreenshot();
+//    applyScreenshot();
+    onViewRectChanged();
   }
 
   private boolean handleCropModeUpEvent(MotionEvent event,
@@ -700,7 +701,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
     if (getScreenshot() != null){
       RectF rectf = mGestureListener.getDstRect();
       Canvas canvas = mSurfaceHolder.lockCanvas();
-//      canvas.drawColor(Color.WHITE, Mode.CLEAR);
       canvas.drawBitmap(getScreenshot(), null, rectf, mPaintingPaint);
       mSurfaceHolder.unlockCanvasAndPost(canvas);
     }
