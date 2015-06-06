@@ -4,7 +4,7 @@
     <string name="app_name">小画家</string>
     <string name="action_settings">设置</string>
 
-    <string name="saving_warning">不保存就退出吗？</string>
+    <string name="saving_warning">有内容未保存，要保存吗？</string>
     <string name="save">保存一下</string>
     <string name="do_not_save">不保存了</string>
     <string name="image_saved">已保存至：</string>
@@ -22,4 +22,6 @@
     <string name="enter_clip_mode">进入裁剪模式</string>
     <string name="exit_clip_mode">退出裁剪模式</string>
     <string name="move_and_click_tip">移动裁剪部分后点击确定</string>
+
+    <string name="scale_factor">缩放比例 </string>
 </resources>

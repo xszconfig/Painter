@@ -2,16 +2,22 @@ package com.xszconfig.painter.view;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Context;
 import android.graphics.RectF;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.widget.Toast;
 
-public class ViewerGestureListener implements ScaleGestureDetector.OnScaleGestureListener {
+import com.xszconfig.painter.R;
+
+public class SketchpadGestureListener implements ScaleGestureDetector.OnScaleGestureListener {
   private boolean mFakeScale;
   private boolean mScaling;
+  private Context mContext;
+  private static final float FINAL_MAX_SCALE = 10.0F;
+  private static final float MAX_WHEN_SCALING = 20.0F;
+  private static final float PERCENTAGE_TO_ANIMATE_BACK = 0.5F;
 
-  private static final float MAX_SCALE = 10.0F;
   private ValueAnimator mAnimator;
   private float mBeginScale;
   private final float mCenterX;
@@ -69,10 +75,10 @@ public class ViewerGestureListener implements ScaleGestureDetector.OnScaleGestur
     mScaling = false;
     mFakeScale = false;
     this.onScaleEnd();
-    Log.d("onScaleEnd", "scaleFactor = " + getScale());
   }
 
-  public ViewerGestureListener(int i, int j, ViewRectChangedListener viewrectchangedlistener) {
+  public SketchpadGestureListener(Context mContext, int i, int j, ViewRectChangedListener viewrectchangedlistener) {
+    this.mContext = mContext;
     mScaling = false;
     mFakeScale = false;
     mWidth = i;
@@ -122,6 +128,11 @@ public class ViewerGestureListener implements ScaleGestureDetector.OnScaleGestur
     return mTranslateY;
   }
 
+  /**
+   * Convert X from a unscaled bitmap into X for a scaled bitmap
+   * @param f
+   * @return X for a scaled bitmap
+   */
   public float inverseX(float f) {
     return (f - mTranslateX - mCenterX) * mInverseScale + mCenterX;
   }
@@ -160,7 +171,7 @@ public class ViewerGestureListener implements ScaleGestureDetector.OnScaleGestur
   }
 
   public boolean onScale(float f, float f1, float f2) {
-    if (mScale < 5F) {
+    if (mScale < MAX_WHEN_SCALING) {
       float f3 = f - transformX(mStartFocusX);
       float f4 = f1 - transformY(mStartFocusY);
       mTranslateX = mTranslateX + f3 * 0.6F;
@@ -176,80 +187,127 @@ public class ViewerGestureListener implements ScaleGestureDetector.OnScaleGestur
   }
 
   public boolean onScaleBegin(float f, float f1) {
+    /*
+     * Cancel current animation so that it'll stop in its tracks.
+     */
     mAnimator.cancel();
+    /*
+     * mLastScale is like getScaleFactor(),
+     * scaling factor from the previous scale event to the current event.
+     * So set it to 1.0F everytime on scale begin.
+     */
     mLastScale = 1.0F;
+    /*
+     * mBeginScale records the last mScale, aka the mScale when begin.
+     */
     mBeginScale = mScale;
+    /*
+     * This is nothing but a base number to be divided.
+     */
     mScaleBase = 1.0F;
+    /*
+     * Convert original point into a scaled point.
+     */
     mStartFocusX = inverseX(f);
     mStartFocusY = inverseY(f1);
     return true;
   }
 
   public void onScaleEnd() {
-    float f = mScale;
-    float f1 = mTranslateX;
-    float f2 = mTranslateY;
-    boolean flag;
-    if (Math.abs(mScale / mBeginScale - 1.0F) <= 0.1F)
-      flag = true;
-    else
-      flag = false;
-    if (!flag && mScale < 0.9F) {
+    float savedScale = mScale;
+    float savedTranslateX = mTranslateX;
+    float savedTranslateY = mTranslateY;
+    boolean flag_isScaleLessThan10Percent;
+    if (Math.abs(mScale / mBeginScale - 1.0F) <= (1.0F - PERCENTAGE_TO_ANIMATE_BACK)){
+      flag_isScaleLessThan10Percent = true;
+    } else{
+      flag_isScaleLessThan10Percent = false;
+    }
+    /*
+     * If is too small, smaller than 50%, animate it back to original standard size and position.
+     */
+    if (!flag_isScaleLessThan10Percent && mScale < PERCENTAGE_TO_ANIMATE_BACK) {
       mAnimator.cancel();
       mValueHolder.init(mScale, mTranslateX, mTranslateY, 1.0F, 0.0F, 0.0F);
+      toastScale();
       mAnimator.start();
+
+    /*
+     * If is small, 50% ~ 100%, animate it back to original standard size, and adjust translateXY if needed
+     */
     } else {
-      float f3;
-      boolean flag1;
-      float f4;
-      boolean flag2;
-      float f5;
+      float finalScale;
+      boolean flag_smallerThanStandard;
+      float finalTranslateX;
+      boolean flag_needAdjustTranslateXY;
+      float finalTranslateY;
       if (mScale < 1.0F) {
-        flag1 = true;
-        f3 = 1.0F;
+        flag_smallerThanStandard = true;
+        finalScale = 1.0F;
+
+    /*
+     * If is too big, animate it to final max size, and adjust translateXY if needed.
+     */
       } else {
-        if (mScale > 3F) {
+        if (mScale > FINAL_MAX_SCALE) {
           mAnimator.cancel();
-          float f6 = mScale - 3F;
-          float f7 = f6 * (mStartFocusX - mCenterX);
-          float f8 = f6 * (mStartFocusY - mCenterY);
-          mValueHolder.init(mScale, mTranslateX, mTranslateY, 3F, f7 + mTranslateX, f8 + mTranslateY);
+          float scaleToAdjust = mScale - FINAL_MAX_SCALE;
+          float XToAdjust = scaleToAdjust * (mStartFocusX - mCenterX);
+          float YToAdjust = scaleToAdjust * (mStartFocusY - mCenterY);
+          mValueHolder.init(mScale, mTranslateX, mTranslateY,
+              FINAL_MAX_SCALE, XToAdjust + mTranslateX, YToAdjust + mTranslateY);
+          toastScale();
           mAnimator.start();
           return;
         }
-        f3 = f;
-        flag1 = false;
+        finalScale = savedScale;
+        flag_smallerThanStandard = false;
       }
+      /*
+       * Compute finalTranslateX and finalTranslateY
+       */
       if (mDstRect.left > mViewLeft) {
-        flag2 = true;
-        f4 = mViewLeft + 0.5F * (f3 * (float) mWidth - (float) mWidth);
+        flag_needAdjustTranslateXY = true;
+        finalTranslateX = mViewLeft + 0.5F * (finalScale * (float) mWidth - (float) mWidth);
       } else {
-        f4 = f1;
-        flag2 = false;
+        finalTranslateX = savedTranslateX;
+        flag_needAdjustTranslateXY = false;
       }
       if (mDstRect.top > mViewTop) {
-        flag2 = true;
-        f5 = mViewTop + 0.5F * (f3 * (float) mHeight - (float) mHeight);
+        flag_needAdjustTranslateXY = true;
+        finalTranslateY = mViewTop + 0.5F * (finalScale * (float) mHeight - (float) mHeight);
       } else {
-        f5 = f2;
+        finalTranslateY = savedTranslateY;
       }
       if (mDstRect.right < mViewRight) {
-        flag2 = true;
-        f4 = mViewRight - (float) mWidth - 0.5F * (f3 * (float) mWidth - (float) mWidth);
+        flag_needAdjustTranslateXY = true;
+        finalTranslateX = mViewRight - (float) mWidth - 0.5F * (finalScale * (float) mWidth - (float) mWidth);
       }
       if (mDstRect.bottom < mViewBottom) {
-        flag2 = true;
-        f5 = mViewBottom - (float) mHeight - 0.5F * (f3 * (float) mHeight - (float) mHeight);
+        flag_needAdjustTranslateXY = true;
+        finalTranslateY = mViewBottom - (float) mHeight - 0.5F * (finalScale * (float) mHeight - (float) mHeight);
       }
-      if (flag1 || flag2) {
+      /*
+       * Finally we can auto-scale it to what we want! Cheers!
+       */
+      if (flag_smallerThanStandard || flag_needAdjustTranslateXY) {
         mAnimator.cancel();
-        mValueHolder.init(mScale, mTranslateX, mTranslateY, f3, f4, f5);
+        mValueHolder.init(mScale, mTranslateX, mTranslateY, finalScale, finalTranslateX, finalTranslateY);
+        toastScale();
         mAnimator.start();
         return;
       }
     }
   }
 
+  private void toastScale(){
+    /*
+     * Toast to show the final scale with a X.X format.
+     */
+    Toast.makeText(mContext,
+        mContext.getString(R.string.scale_factor) + String.format("%.1f", getScale()),
+        Toast.LENGTH_SHORT).show();
+  }
   public boolean onScroll(float f, float f1, float f2, float f3) {
     return false;
   }
@@ -272,6 +330,11 @@ public class ViewerGestureListener implements ScaleGestureDetector.OnScaleGestur
     mViewBottom = f1;
   }
 
+  /**
+   * Convert X from a scaled bitmap into X for a unscaled bitmap.
+   * @param f
+   * @return x for a unscaled bitmap
+   */
   public float transformX(float f) {
     return (f - mCenterX) * mScale + mCenterX + mTranslateX;
   }

@@ -257,13 +257,17 @@ public class PaintActivity extends Activity implements OnClickListener {
       }
 
       case R.id.redo:
-        mSketchpad.redo();
-        mToastUtil.shortToast(getString(R.string.redo));
+        if(mSketchpad.haveActionsToRedo()) {
+          mSketchpad.redo();
+          mToastUtil.shortToast(getString(R.string.redo));
+        }
         break;
 
       case R.id.undo:
-        mSketchpad.undo();
-        mToastUtil.shortToast(getString(R.string.undo));
+        if(mSketchpad.haveActionsToShow()) {
+          mSketchpad.undo();
+          mToastUtil.shortToast(getString(R.string.undo));
+        }
         break;
 
       case R.id.scissors:
@@ -306,6 +310,13 @@ public class PaintActivity extends Activity implements OnClickListener {
   @Override
   public void onBackPressed() {
 //    saveBrushColorAndSize();
+
+    /*
+     * Animate sketchpad back if needed.
+     */
+    if (mSketchpad.getGestureListener().onBackPressed()){
+      return;
+    }
 
     if (!mSketchpad.haveActionsToShow()){
       finish();

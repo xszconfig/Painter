@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff.Mode;
@@ -27,7 +26,7 @@ import java.util.List;
  * The Sketchpad to draw paintings on. This is a {@link android.view.SurfaceView}.
  */
 
-public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, ViewerGestureListener.ViewRectChangedListener {
+public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, SketchpadGestureListener.ViewRectChangedListener {
 
   private static int DEFAULT_SKETCHPAD_BG_COLOR = Color.WHITE;
 
@@ -60,12 +59,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
    */
   private String savedFilePath = "";
 
-  /**
-   * boolean value to indicate if the canvas is zooming.
-   */
-  private boolean mIsZoomed = false;
-  private Matrix currMatrix;
-  private ViewerGestureListener mGestureListener;
+  private SketchpadGestureListener mGestureListener;
   private ScaleGestureDetector mScaleDetector;
   private int mForceWidth ;
   private int mForceHeight;
@@ -125,7 +119,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
     final int PAINTING_HEIGHT = displaymetrics.heightPixels;
     mForceWidth = PAINTING_WIDTH;
     mForceHeight = PAINTING_HEIGHT;
-    mGestureListener = new ViewerGestureListener(mForceWidth, mForceHeight, this);
+    mGestureListener = new SketchpadGestureListener(context, mForceWidth, mForceHeight, this);
     mGestureListener.setViewCenter((float)mForceWidth / 2.0F, (float)mForceHeight / 2.0F);
     mScaleDetector = new ScaleGestureDetector(context, mGestureListener);
   }
@@ -145,7 +139,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
                              int height) {
     tryLoadingSavedPaintingBitmap();
     initScreenshotAndCanvas();
-    applyScreenshot();
+//    applyScreenshot();
+    onViewRectChanged();
 
     if (haveActionsToShow()) {
       performShownActions();
@@ -162,14 +157,14 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
     return shownActions != null && shownActions.size() > 0;
   }
 
+  public boolean haveActionsToRedo() {
+    return removedActions != null && removedActions.size() > 0;
+  }
+
   private void performShownActions() {
     /*
      *  Perform all actions to the screenshot.
      */
-    if (isZoomMode() && currMatrix != null){
-      screenshotCanvas.setMatrix(currMatrix);
-    }
-
     screenshotCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
     if (savedPaintingBitmap != null) {
       screenshotCanvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
@@ -184,7 +179,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
       }
     }
 
-    applyScreenshot();
+//    applyScreenshot();
+    onViewRectChanged();
   }
 
   private void performAutoCrop(Canvas backupCanvas, CropAction cropAction){
@@ -283,72 +279,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
            */
         }
 
-      } else if (isZoomMode()) {
-        /**
-         * Zoom Mode Start
-         */
-        switch (action) {
-          case MotionEvent.ACTION_DOWN:
-//            downX = touchX;
-//            downY = touchY;
-//            if (currMatrix != null) {
-//              createActionWhenZoomed(touchX, touchY, zoomCenterX, zoomCenterY, curZoomScale);
-//            }
-            break;
-
-          case MotionEvent.ACTION_MOVE:
-
-            // Todo this needs to be changed
-            // // draw on the zoomed canvas.
-            // else if( isZoomMode() && currMatrix != null ) {
-            // Canvas canvas = mSurfaceHolder.lockCanvas();
-            // canvas.setMatrix(currMatrix);
-            // canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
-            // if( savedPaintingBitmap != null ) {
-            // canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-            // }
-            // for (Action a : shownActions) {
-            // a.draw(canvas);
-            // }
-            // if (curAction != null){
-            // curAction.moveWhenZoomed(touchX, touchY, zoomCenterX,
-            // zoomCenterY, curZoomScale);
-            // curAction.draw(canvas);
-            // }
-            // mSurfaceHolder.unlockCanvasAndPost(canvas);
-            // }
-
-//          {
-//            Canvas canvas = mSurfaceHolder.lockCanvas();
-//            canvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
-//            if (savedPaintingBitmap != null) {
-//              canvas.drawBitmap(savedPaintingBitmap, 0, 0, null);
-//            }
-//            for (Action a : shownActions) {
-//              a.draw(canvas);
-//            }
-//            if (curAction != null) {
-//              curAction.move(touchX, touchY);
-//              curAction.draw(canvas);
-//            }
-//            mSurfaceHolder.unlockCanvasAndPost(canvas);
-//          }
-            break;
-
-          case MotionEvent.ACTION_UP:
-            /*
-             * Zoom mode Up-event is handled the same way as Normal Mode.
-             */
-//            return handleNormalModeUpEvent(event, downX, downY);
-
-          default:
-            break;
-          /**
-           * Zoom Mode End
-           */
-        }
-
-      }else {
+      } else {
         /**
          * Normal Mode Start
          */
@@ -356,7 +287,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
           case MotionEvent.ACTION_DOWN:
             downX = touchX;
             downY = touchY;
-            createAction(touchX, touchY);
+            createAction(mGestureListener.inverseX(touchX), mGestureListener.inverseY(touchY));
             break;
 
           case MotionEvent.ACTION_MOVE:
@@ -399,10 +330,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
     if (getScreenshot() == null){
       setScreenshot(createEmptyBitmap());
       screenshotCanvas = new Canvas(getScreenshot());
-
-      if (isZoomMode() && currMatrix != null){
-        screenshotCanvas.setMatrix(currMatrix);
-      }
 
       screenshotCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
       if (savedPaintingBitmap != null && !savedPaintingBitmap.isRecycled()) {
@@ -489,7 +416,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
       resultCanvas.drawBitmap(croppedBitmap, cropMoveDeltaX, cropMoveDeltaY, null);
       screenshotCanvas.drawBitmap(resultBitmap, 0, 0, null);
 
-      applyScreenshot();
+//      applyScreenshot();
+      onViewRectChanged();
 
       cropAction.setDestinationPath(cropAction.getInternalPath());
       cropAction.setMoveDatlaX(cropMoveDeltaX);
@@ -696,6 +624,10 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
     downY = 0;
   }
 
+  public SketchpadGestureListener getGestureListener() {
+    return mGestureListener;
+  }
+
   @Override
   public void onViewRectChanged() {
     if (getScreenshot() != null){
@@ -808,14 +740,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
     savedFilePath = "";
   }
 
-  private boolean isZoomMode() {
-    return mIsZoomed;
-  }
-
-  private void setZoomMode(boolean isZoomed){
-    mIsZoomed = isZoomed;
-  }
-
   public boolean isCropMode() {
     return mIsCropMode;
   }
@@ -866,13 +790,10 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Vi
     }
     shownActions.clear();
     removedActions.clear();
-
-    if (isZoomMode() && currMatrix != null){
-      screenshotCanvas.setMatrix(currMatrix);
-    }
     screenshotCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
 
-    applyScreenshot();
+//    applyScreenshot();
+    onViewRectChanged();
   }
 
   private void applyScreenshot() {
