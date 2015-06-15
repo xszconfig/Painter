@@ -75,6 +75,8 @@ public class SketchpadGestureListener implements ScaleGestureDetector.OnScaleGes
     mScaling = false;
     mFakeScale = false;
     this.onScaleEnd();
+    // Todo The invoke time is not very correct here.
+    toastScale();
   }
 
   public SketchpadGestureListener(Context mContext, int i, int j, ViewRectChangedListener viewrectchangedlistener) {
@@ -229,7 +231,6 @@ public class SketchpadGestureListener implements ScaleGestureDetector.OnScaleGes
     if (!flag_isScaleLessThan10Percent && mScale < PERCENTAGE_TO_ANIMATE_BACK) {
       mAnimator.cancel();
       mValueHolder.init(mScale, mTranslateX, mTranslateY, 1.0F, 0.0F, 0.0F);
-      toastScale();
       mAnimator.start();
 
     /*
@@ -256,7 +257,6 @@ public class SketchpadGestureListener implements ScaleGestureDetector.OnScaleGes
           float YToAdjust = scaleToAdjust * (mStartFocusY - mCenterY);
           mValueHolder.init(mScale, mTranslateX, mTranslateY,
               FINAL_MAX_SCALE, XToAdjust + mTranslateX, YToAdjust + mTranslateY);
-          toastScale();
           mAnimator.start();
           return;
         }
@@ -293,7 +293,6 @@ public class SketchpadGestureListener implements ScaleGestureDetector.OnScaleGes
       if (flag_smallerThanStandard || flag_needAdjustTranslateXY) {
         mAnimator.cancel();
         mValueHolder.init(mScale, mTranslateX, mTranslateY, finalScale, finalTranslateX, finalTranslateY);
-        toastScale();
         mAnimator.start();
         return;
       }

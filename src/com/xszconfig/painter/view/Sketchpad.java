@@ -85,6 +85,8 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
   private float lastCropMoveDeltaY = 0f;
   private float downX = 0f;
   private float downY = 0f;
+//  private float lastLineToX = -1F;
+//  private float lastLineToY = -1F;
   private Paint mPaintingPaint;
 
   public Sketchpad(Context context) {
@@ -139,7 +141,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
                              int height) {
     tryLoadingSavedPaintingBitmap();
     initScreenshotAndCanvas();
-//    applyScreenshot();
     onViewRectChanged();
 
     if (haveActionsToShow()) {
@@ -179,7 +180,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
       }
     }
 
-//    applyScreenshot();
     onViewRectChanged();
   }
 
@@ -245,9 +245,28 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
     }
 
     /**
+     *  Handle double-finger-zooming events here.
+     */
+    if (event.getPointerCount() == 2) {
+
+//      if(!mGestureListener.isScaling()) {
+//        float f = 0.5F * (event.getX(0) + event.getX(1));
+//        float f1 = 0.5F * (event.getY(0) + event.getY(1));
+//        if(mGestureListener.isFakeScale()) {
+//          mGestureListener.onScale(f, f1, 1.0F);
+//        } else {
+//          mGestureListener.setFakeScale(true);
+//          mGestureListener.onScaleBegin(f, f1);
+//        }
+//      }
+      mScaleDetector.onTouchEvent(event);
+      return true;
+    }
+
+    /**
      *  Handle single-finger-events here.
      */
-    if (event.getPointerCount() == 1) {
+    else if (event.getPointerCount() == 1) {
       float touchX = event.getRawX();
       float touchY = event.getRawY();
 
@@ -287,10 +306,36 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
           case MotionEvent.ACTION_DOWN:
             downX = touchX;
             downY = touchY;
+//            lastLineToX = downX;
+//            lastLineToY = downY;
             createAction(mGestureListener.inverseX(touchX), mGestureListener.inverseY(touchY));
             break;
 
           case MotionEvent.ACTION_MOVE:
+//            final float MIN_JOINT_POINT_SPAN = 50;
+            boolean areJointPoints;
+//            Check HistorySize first
+            areJointPoints = event.getHistorySize() > 1;
+//
+//            If HistorySize is OK then check the span between the first two points
+//            if (areJointPoints){
+//              if ( Math.abs(lastLineToX - touchX) > MIN_JOINT_POINT_SPAN ||
+//                  Math.abs(lastLineToY - touchY) > MIN_JOINT_POINT_SPAN ){
+//                lastLineToX = -1F;
+//                lastLineToY = -1F;
+//                areJointPoints = false;
+//
+//              }else{
+//                lastLineToX = touchX;
+//                lastLineToY = touchY;
+//                areJointPoints = true;
+//              }
+//            }
+//
+            if (!areJointPoints){
+              // Do not draw points that are not joint.
+              return true;
+            }
             handleNormalModeMoveEvent(touchX, touchY);
             break;
 
@@ -304,23 +349,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
          * Normal Mode End
          */
       }
-
-      /**
-       *  Handle double-finger-zooming events here.
-       */
-    }else if (event.getPointerCount() == 2) {
-
-//      if(!mGestureListener.isScaling()) {
-//        float f = 0.5F * (event.getX(0) + event.getX(1));
-//        float f1 = 0.5F * (event.getY(0) + event.getY(1));
-//        if(mGestureListener.isFakeScale()) {
-//          mGestureListener.onScale(f, f1, 1.0F);
-//        } else {
-//          mGestureListener.setFakeScale(true);
-//          mGestureListener.onScaleBegin(f, f1);
-//        }
-//      }
-      mScaleDetector.onTouchEvent(event);
     }
 
     return false;
@@ -397,7 +425,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
       curAction.move(mGestureListener.inverseX(touchX), mGestureListener.inverseY(touchY));
       curAction.draw(screenshotCanvas);
     }
-//    applyScreenshot();
     onViewRectChanged();
   }
 
@@ -416,7 +443,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
       resultCanvas.drawBitmap(croppedBitmap, cropMoveDeltaX, cropMoveDeltaY, null);
       screenshotCanvas.drawBitmap(resultBitmap, 0, 0, null);
 
-//      applyScreenshot();
       onViewRectChanged();
 
       cropAction.setDestinationPath(cropAction.getInternalPath());
@@ -672,20 +698,6 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
     curAction = new Action(newBrush, newColor, x, y);
   }
 
-  public void createActionWhenZoomed(float targetX, float targetY, float pivotX, float pivotY, float scale) {
-    Brush newBrush = new Brush();
-    if (curBrush != null) {
-      newBrush.setSize(curBrush.getSize());
-    }
-
-    int newColor = Action.DEFAULT_COLOR;
-    if (curColor != Action.DEFAULT_COLOR) {
-      newColor = curColor;
-    }
-
-    curAction = new Action(newBrush, newColor, targetX, targetY, pivotX, pivotY, scale);
-  }
-
   /**
    * get screenshot of the sketchpad
    *
@@ -792,19 +804,7 @@ public class Sketchpad extends SurfaceView implements SurfaceHolder.Callback, Sk
     removedActions.clear();
     screenshotCanvas.drawColor(DEFAULT_SKETCHPAD_BG_COLOR);
 
-//    applyScreenshot();
     onViewRectChanged();
-  }
-
-  private void applyScreenshot() {
-    Canvas canvas = mSurfaceHolder.lockCanvas();
-    canvas.drawBitmap(getScreenshot(), 0, 0, null);
-    mSurfaceHolder.unlockCanvasAndPost(canvas);
-  }
-
-  @Override
-  protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
   }
 
 }
